@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@langchain/openai": "^1.2.12",
+    "@pinecone-database/pinecone": "^7.1.0",
+    "dotenv": "^17.3.1",
+    "youtube-transcript": "^1.2.1"
+  }
+}
