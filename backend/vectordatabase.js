@@ -1,7 +1,8 @@
 import { Pinecone } from '@pinecone-database/pinecone';
+import { randomUUID } from 'crypto';
 import { embedTexts } from './embedder-text.js';
 
-const DB_INDEX = 'rag-langchain-nodejs';
+const DB_INDEX = 'visora';
 const NAMESPACE = 'test-namespace';
 
 if (!process.env.PINECONE_API_KEY) {
@@ -27,7 +28,7 @@ async function createIndex() {
   try {
     await pc.createIndex({
       name: DB_INDEX,
-      dimension: 3072, // text-embedding-3-large
+      dimension: 3072, // gemini-embedding-001
       metric: 'cosine',
       spec: {
         serverless: {
@@ -61,12 +62,12 @@ async function storeEmbeddings(embeddingsDataArr) {
     }
 
     const index = pc.index(DB_INDEX);
-    const vectors = embeddingsDataArr.map((data, id) => ({
-      id: `vec_${id}`,
+    const vectors = embeddingsDataArr.map((data) => ({
+      id: randomUUID(),
       values: data.embedding,
       metadata: { chunk: data.chunk },
     }));
-    await index.namespace(NAMESPACE).upsert(vectors);
+    await index.namespace(NAMESPACE).upsert({ records: vectors });
     console.log('Embeddings stored successfully');
   } catch (error) {
     console.error('Error storing embeddings:', error);
@@ -76,9 +77,10 @@ async function storeEmbeddings(embeddingsDataArr) {
 async function retrieveRelevantChunks(query) {
   try {
     const queryEmbedding = await embedTexts([query]);
+    const vector = Array.from(queryEmbedding[0].embedding);
     const index = pc.index(DB_INDEX);
     const queryResponse = await index.namespace(NAMESPACE).query({
-      vector: queryEmbedding[0].embedding,
+      vector,
       topK: 5,
       includeMetadata: true,
     });

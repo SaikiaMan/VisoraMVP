@@ -68,7 +68,7 @@ const init = async (videoUrl) => {
 };
 
 const main = async () => {
-  const videoUrl = 'https://youtu.be/cucQtak-jco?si=BqGGyf7xsIjc3RBu'; // ← change this
+  const videoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // ← change this
 
   try {
     await init(videoUrl);
