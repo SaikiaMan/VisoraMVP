@@ -13,7 +13,12 @@ import {
   storeEmbeddings
 } from './backend/vectordatabase.js';
 
-const processYoutube = async (videoUrl) => {
+const extractVideoId = (url) => {
+  const match = url.match(/(?:v=|youtu\.be\/)([^&?/]{11})/);
+  return match ? match[1] : url;
+};
+
+const processYoutube = async (videoUrl, namespace) => {
   console.log('Processing YouTube video', videoUrl);
 
   try {
@@ -36,7 +41,7 @@ const processYoutube = async (videoUrl) => {
     }
 
     const embeddings = await embedTexts(chunks);
-    await storeEmbeddings(embeddings);
+    await storeEmbeddings(embeddings, namespace);
 
     console.log('YouTube video processed and stored successfully');
   } catch (error) {
@@ -46,6 +51,8 @@ const processYoutube = async (videoUrl) => {
 };
 
 const init = async (videoUrl) => {
+  const namespace = extractVideoId(videoUrl);
+
   const indexExists = await checkIndexExists();
   console.log('Index exists', indexExists);
 
@@ -57,21 +64,24 @@ const init = async (videoUrl) => {
   }
 
   const testQuery = 'summary';
-  const relevantChunksMatchingQuery = await retrieveRelevantChunks(testQuery);
+  const relevantChunksMatchingQuery = await retrieveRelevantChunks(testQuery, namespace);
 
   if (!relevantChunksMatchingQuery.length) {
     console.log('No matching chunks found, processing YouTube video...');
-    await processYoutube(videoUrl);
+    await processYoutube(videoUrl, namespace);
   } else {
     console.log('Video already indexed, skipping processing');
   }
+
+  return namespace;
 };
 
 const main = async () => {
-  const videoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // ← change this
+  const videoUrl = 'https://youtu.be/dAF5FngVa7A?si=W0YcpQwORJI0rApq'; // ← change this
 
+  let namespace;
   try {
-    await init(videoUrl);
+    namespace = await init(videoUrl);
   } catch (error) {
     console.error('Initialization failed. Please fix the errors above and try again.');
     process.exit(1);
@@ -93,7 +103,7 @@ const main = async () => {
       }
 
       try {
-        const relevantChunksMatchingQuery = await retrieveRelevantChunks(query);
+        const relevantChunksMatchingQuery = await retrieveRelevantChunks(query, namespace);
         const answer = await generateAnswer(query, relevantChunksMatchingQuery);
 
         console.log('-----------------------------------');

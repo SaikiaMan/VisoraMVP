@@ -1,50 +1,51 @@
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 async function generateAnswer(query, retrievedChunks) {
   if (!Array.isArray(retrievedChunks) || retrievedChunks.length === 0) {
     return 'I do not have enough info to answer this question.';
   }
 
-  if (!process.env.GOOGLE_API_KEY) {
+  if (!process.env.GROQ_API_KEY) {
     throw new Error(
-      'GOOGLE_API_KEY is not set. Please add it to your .env file before running the app.'
+      'GROQ_API_KEY is not set. Please add it to your .env file before running the app.'
     );
   }
 
   const context = retrievedChunks.join(' ');
 
-  const systemMessage = `You are an AI that answers questions strictly based on the provided context.
+  const systemMessage = `You are an AI tutor that answers questions strictly based on the provided context.
+Always respond in clear English, even if the source context is in another language.
 If the context doesn't contain enough information, respond with "I do not have enough info to answer this question."`;
 
-  const userMessage = `Context: ${context}\n\nQuestion: ${query}`;
+  const userMessage = `Context: ${context}\n\nQuestion: ${query}\n\nReturn the final answer in English only.`;
 
   try {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GOOGLE_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: systemMessage }],
-          },
-          contents: [
-            { role: 'user', parts: [{ text: userMessage }] },
-          ],
-        }),
-      }
-    );
+    const resp = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [
+          { role: 'system', content: systemMessage },
+          { role: 'user', content: userMessage },
+        ],
+      }),
+    });
 
     const data = await resp.json();
 
     if (!resp.ok) {
-      throw new Error(`Gemini API error: ${JSON.stringify(data)}`);
+      throw new Error(`Groq API error: ${JSON.stringify(data)}`);
     }
 
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    const text = data?.choices?.[0]?.message?.content ?? '';
     return text.trim() || 'I do not have enough info to answer this question.';
   } catch (error) {
-    console.error('Error generating answer:', error);
+    console.error('Error generating answer:', error?.message || error);
     return 'There was an error generating an answer. Please try again later.';
   }
 }

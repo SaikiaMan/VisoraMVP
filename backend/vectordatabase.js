@@ -3,7 +3,6 @@ import { randomUUID } from 'crypto';
 import { embedTexts } from './embedder-text.js';
 
 const DB_INDEX = 'visora';
-const NAMESPACE = 'test-namespace';
 
 if (!process.env.PINECONE_API_KEY) {
   throw new Error(
@@ -54,7 +53,7 @@ async function describeIndexStats() {
   }
 }
 
-async function storeEmbeddings(embeddingsDataArr) {
+async function storeEmbeddings(embeddingsDataArr, namespace) {
   try {
     if (!Array.isArray(embeddingsDataArr) || embeddingsDataArr.length === 0) {
       console.warn('No embeddings to store (received empty array). Skipping upsert.');
@@ -67,24 +66,26 @@ async function storeEmbeddings(embeddingsDataArr) {
       values: data.embedding,
       metadata: { chunk: data.chunk },
     }));
-    await index.namespace(NAMESPACE).upsert({ records: vectors });
+    await index.namespace(namespace).upsert({ records: vectors });
     console.log('Embeddings stored successfully');
   } catch (error) {
     console.error('Error storing embeddings:', error);
   }
 }
 
-async function retrieveRelevantChunks(query) {
+async function retrieveRelevantChunks(query, namespace) {
   try {
     const queryEmbedding = await embedTexts([query]);
     const vector = Array.from(queryEmbedding[0].embedding);
     const index = pc.index(DB_INDEX);
-    const queryResponse = await index.namespace(NAMESPACE).query({
+    const queryResponse = await index.namespace(namespace).query({
       vector,
       topK: 5,
       includeMetadata: true,
     });
-    return queryResponse.matches.map((match) => match.metadata.chunk);
+    return queryResponse.matches
+      .filter((match) => match.metadata?.chunk)
+      .map((match) => match.metadata.chunk);
   } catch (error) {
     console.error('Error retrieving relevant chunks:', error);
     return [];
@@ -98,3 +99,4 @@ export {
   retrieveRelevantChunks,
   checkIndexExists,
 };
+
