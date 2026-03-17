@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Visora | AI Doubt Solver</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Fraunces:opsz,wght@9..144,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="landing">
+        <header class="topbar">
+          <p class="brand">Visora</p>
+          <button class="mini-cta" type="button" data-start-learning>Start Learning</button>
+        </header>
+
+        <div class="landing-card">
+          <div class="hero-block">
+            <p class="kicker">AI Learning Co-Pilot for YouTube Students</p>
+            <h1>Turn Every Lecture Into Actionable Study Power.</h1>
+            <p class="subtitle">
+              Visora helps students watch, understand, revise, and test themselves faster with AI.
+              Learn from videos without pausing your flow.
+            </p>
+            <button id="startLearningBtn" class="cta-btn" type="button" data-start-learning>
+              Start Learning
+            </button>
+          </div>
+
+          <section class="about-block">
+            <h2>What Is Visora?</h2>
+            <p>
+              Visora is a student-first platform built for video-based learning. It combines an
+              interactive video section and an AI doubt-solving assistant, then extends learning with
+              smart notes, quizzes, flashcards, planning, and concept visualization.
+            </p>
+          </section>
+
+          <section class="features-block">
+            <h2>All Features</h2>
+            <div class="feature-grid">
+              <article class="feature-card">
+                <h3>AI Doubt Solver</h3>
+                <p>Ask instant questions while watching and get context-aware answers.</p>
+              </article>
+              <article class="feature-card">
+                <h3>AI Generated Notes</h3>
+                <p>Auto-create clear study notes from lecture transcripts.</p>
+              </article>
+              <article class="feature-card">
+                <h3>Timestamp Questions</h3>
+                <p>Jump to exact moments in the video where each concept appears.</p>
+              </article>
+              <article class="feature-card">
+                <h3>AI Quiz Generator</h3>
+                <p>Generate topic-wise quizzes to test understanding quickly.</p>
+              </article>
+              <article class="feature-card">
+                <h3>Concept Visualizer</h3>
+                <p>Break difficult topics into simple visual or structured explanations.</p>
+              </article>
+              <article class="feature-card">
+                <h3>Weak Topic Detection</h3>
+                <p>Identify weak areas from your doubts, quiz scores, and revision patterns.</p>
+              </article>
+              <article class="feature-card">
+                <h3>Study Planner</h3>
+                <p>Create daily and weekly plans aligned to your weak and priority topics.</p>
+              </article>
+              <article class="feature-card">
+                <h3>Flashcards</h3>
+                <p>Generate quick revision cards for active recall and spaced practice.</p>
+              </article>
+              <article class="feature-card">
+                <h3>Lecture Summary</h3>
+                <p>Get concise summaries to revise full lectures in minutes.</p>
+              </article>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="learningWorkspace" class="workspace-wrap">
+        <header class="hero">
+          <h2>Video + AI Doubt Solver</h2>
+          <p>Ask while you watch. Stay in learning flow.</p>
+        </header>
+
+        <section class="workspace">
+        <article class="panel video-panel">
+          <div class="panel-head">
+            <h2>Video Section</h2>
+            <span id="videoStatus" class="chip">Not loaded</span>
+          </div>
+
+          <label class="field-label" for="videoUrl">YouTube URL</label>
+          <div class="video-controls">
+            <input id="videoUrl" type="url" placeholder="Paste YouTube link" />
+            <button id="loadVideoBtn" type="button">Load Video</button>
+          </div>
+
+          <div class="video-frame-wrap">
+            <iframe
+              id="videoFrame"
+              title="Lesson Video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+            ></iframe>
+          </div>
+        </article>
+
+        <article class="panel chat-panel">
+          <div class="panel-head">
+            <h2>AI Doubt Solver</h2>
+            <span id="chatStatus" class="chip">Ready</span>
+          </div>
+
+          <div id="chatLog" class="chat-log" aria-live="polite"></div>
+
+          <form id="askForm" class="ask-form">
+            <textarea
+              id="questionInput"
+              rows="3"
+              placeholder="Type your question here..."
+              required
+            ></textarea>
+            <button id="askBtn" type="submit">Ask AI</button>
+          </form>
+        </article>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

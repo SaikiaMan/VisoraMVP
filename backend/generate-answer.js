@@ -2,8 +2,11 @@ const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 async function generateAnswer(query, retrievedChunks) {
-  if (!Array.isArray(retrievedChunks) || retrievedChunks.length === 0) {
-    return 'I do not have enough info to answer this question.';
+  // Even with empty chunks, provide what we can
+  const hasContext = Array.isArray(retrievedChunks) && retrievedChunks.length > 0;
+
+  if (!hasContext) {
+    return 'I do not have enough context to answer this question. Please try asking about content from the video, or load a different video.';
   }
 
   if (!process.env.GROQ_API_KEY) {
@@ -14,11 +17,16 @@ async function generateAnswer(query, retrievedChunks) {
 
   const context = retrievedChunks.join(' ');
 
-  const systemMessage = `You are an AI tutor that answers questions strictly based on the provided context.
-Always respond in clear English, even if the source context is in another language.
-If the context doesn't contain enough information, respond with "I do not have enough info to answer this question."`;
+  const systemMessage = `You are an AI tutor helping students learn from video lectures and transcripts.
+Your role is to:
+1. Answer questions based ONLY on the provided context/transcript
+2. Extract relevant information from the context to answer the student's question
+3. Be helpful and explain concepts clearly
+4. If the exact answer isn't in the context, try to provide related information that might help
 
-  const userMessage = `Context: ${context}\n\nQuestion: ${query}\n\nReturn the final answer in English only.`;
+Important: Only decline to answer if the context is completely irrelevant to the question, not just because it's not a perfect match. Try your best to find connections and provide value to the student.`;
+
+  const userMessage = `Transcript Context: ${context}\n\nQuestion: ${query}\n\nPlease answer based on the provided transcript context. Even if it's not a perfect match, try to provide helpful information related to the question.`;
 
   try {
     const resp = await fetch(GROQ_API_URL, {

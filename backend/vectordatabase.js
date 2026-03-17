@@ -1,56 +1,73 @@
-import { Pinecone } from '@pinecone-database/pinecone';
-import { randomUUID } from 'crypto';
-import { embedTexts } from './embedder-text.js';
+const namespaceChunks = new Map();
 
-const DB_INDEX = 'visora';
+const normalizeText = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
-if (!process.env.PINECONE_API_KEY) {
-  throw new Error(
-    'PINECONE_API_KEY is not set. Please add it to your .env file before running the app.'
-  );
+function scoreChunk(queryTokens, chunk) {
+  const haystack = normalizeText(chunk);
+  if (!haystack.trim()) {
+    return 0;
+  }
+
+  let score = 0;
+  let matchCount = 0;
+
+  for (const token of queryTokens) {
+    if (!token) continue;
+    
+    // Exact word match with spaces (highest priority)
+    const tokenPattern = ` ${token} `;
+    const haystackWithSpaces = ` ${haystack} `;
+    if (haystackWithSpaces.includes(tokenPattern)) {
+      score += 3;
+      matchCount++;
+    } else if (haystack.includes(token)) {
+      // Substring match (partial word or part of compound word)
+      score += 1;
+      matchCount++;
+    }
+  }
+
+  // Bonus: chunks with more matching tokens get a multiplier
+  // This encourages comprehensive matches over single-word matches
+  if (matchCount > 1) {
+    score += matchCount;
+  }
+
+  return score;
 }
 
-// https://docs.pinecone.io/guides/get-started/quickstart
-const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
-
 async function checkIndexExists() {
-  try {
-    const indexList = await pc.listIndexes();
-    return indexList.indexes.some((index) => index.name === DB_INDEX);
-  } catch (error) {
-    console.error('Error checking index existence:', error);
-    return false;
-  }
+  return true;
 }
 
 async function createIndex() {
-  try {
-    await pc.createIndex({
-      name: DB_INDEX,
-      dimension: 3072, // gemini-embedding-001
-      metric: 'cosine',
-      spec: {
-        serverless: {
-          cloud: 'aws',
-          region: 'us-east-1',
-        },
-      },
-    });
-    console.log('Index created successfully');
-  } catch (error) {
-    console.error('Error creating index:', error);
-  }
+  console.log('Using in-memory retrieval. No external vector index is required.');
+}
+
+async function hasStoredChunks(namespace) {
+  return namespaceChunks.has(namespace) && namespaceChunks.get(namespace).length > 0;
 }
 
 async function describeIndexStats() {
-  try {
-    const index = pc.index(DB_INDEX);
-    const stats = await index.describeIndexStats();
-    return stats;
-  } catch (error) {
-    console.error('Error describing index stats:', error);
-    return null;
+  const namespaces = {};
+  let totalRecordCount = 0;
+
+  for (const [namespace, chunks] of namespaceChunks.entries()) {
+    namespaces[namespace] = { recordCount: chunks.length };
+    totalRecordCount += chunks.length;
   }
+
+  return {
+    namespaces,
+    dimension: null,
+    indexFullness: 0,
+    totalRecordCount,
+  };
 }
 
 async function storeEmbeddings(embeddingsDataArr, namespace) {
@@ -60,35 +77,60 @@ async function storeEmbeddings(embeddingsDataArr, namespace) {
       return;
     }
 
-    const index = pc.index(DB_INDEX);
-    const vectors = embeddingsDataArr.map((data) => ({
-      id: randomUUID(),
-      values: data.embedding,
-      metadata: { chunk: data.chunk },
-    }));
-    await index.namespace(namespace).upsert({ records: vectors });
-    console.log('Embeddings stored successfully');
+    const chunks = embeddingsDataArr
+      .map((item) => {
+        if (typeof item === 'string') {
+          return item;
+        }
+
+        if (item && typeof item.chunk === 'string') {
+          return item.chunk;
+        }
+
+        return '';
+      })
+      .filter(Boolean);
+
+    namespaceChunks.set(namespace, chunks);
+    console.log('Chunks stored successfully (in-memory)');
   } catch (error) {
-    console.error('Error storing embeddings:', error);
+    console.error('Error storing chunks:', error);
   }
 }
 
 async function retrieveRelevantChunks(query, namespace) {
   try {
-    const queryEmbedding = await embedTexts([query]);
-    const vector = Array.from(queryEmbedding[0].embedding);
-    const index = pc.index(DB_INDEX);
-    const queryResponse = await index.namespace(namespace).query({
-      vector,
-      topK: 5,
-      includeMetadata: true,
+    const chunks = namespaceChunks.get(namespace) || [];
+    if (!chunks.length) {
+      return [];
+    }
+
+    const queryTokens = normalizeText(query)
+      .split(' ')
+      .filter(Boolean);
+
+    const scored = chunks.map((chunk) => ({
+      chunk,
+      score: scoreChunk(queryTokens, chunk),
+      length: chunk.length, // Prefer longer, more detailed chunks
+    }));
+
+    // Sort by: score (highest first), then by length (prefer longer chunks with context)
+    scored.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      return b.length - a.length; // Tiebreaker: longer chunks are better
     });
-    return queryResponse.matches
-      .filter((match) => match.metadata?.chunk)
-      .map((match) => match.metadata.chunk);
+
+    // Return more chunks to improve recall for follow-up questions.
+    // Always return chunks even if score is 0 - the AI may find connections.
+    const ranked = scored.slice(0, 12).map((item) => item.chunk);
+
+    return ranked;
   } catch (error) {
     console.error('Error retrieving relevant chunks:', error);
-    return [];
+    throw error;
   }
 }
 
@@ -98,5 +140,6 @@ export {
   describeIndexStats,
   retrieveRelevantChunks,
   checkIndexExists,
+  hasStoredChunks,
 };
 

@@ -1,4 +1,4 @@
-function chunkTexts(text, chunkSize = 800, overlapSize = 150) {
+function chunkTexts(text, chunkSize = 350, overlapSize = 80) {
   if (overlapSize >= chunkSize) throw new Error("Overlap must be smaller than chunk size");
 
   // Split on English (.!?) or Hindi (।) sentence boundaries, or newlines
