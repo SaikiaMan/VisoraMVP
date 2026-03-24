@@ -1,0 +1,7 @@
+* text=auto
+*.sh text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+package-lock.json text eol=lf
+yarn.lock text eol=lf

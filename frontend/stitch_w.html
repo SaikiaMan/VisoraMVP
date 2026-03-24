@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-error": "#490013",
+              "on-tertiary-container": "#59002e",
+              "on-secondary-fixed-variant": "#65389f",
+              "surface-container-low": "#131314",
+              "outline": "#767576",
+              "outline-variant": "#484849",
+              "primary-fixed": "#a98fff",
+              "surface": "#0e0e0f",
+              "on-surface": "#ffffff",
+              "surface-container-lowest": "#000000",
+              "primary-container": "#a98fff",
+              "surface-container-highest": "#262627",
+              "on-primary-fixed": "#000000",
+              "on-primary": "#340090",
+              "tertiary-fixed-dim": "#f57ca9",
+              "primary": "#b6a0ff",
+              "on-primary-container": "#280072",
+              "secondary": "#bc8df9",
+              "surface-dim": "#0e0e0f",
+              "surface-container-high": "#201f21",
+              "on-primary-fixed-variant": "#32008a",
+              "error-dim": "#d73357",
+              "tertiary-dim": "#ee77a3",
+              "on-secondary": "#36006c",
+              "secondary-dim": "#b688f3",
+              "error": "#ff6e84",
+              "inverse-on-surface": "#565556",
+              "on-background": "#ffffff",
+              "secondary-container": "#5b2d94",
+              "primary-fixed-dim": "#9c7eff",
+              "on-tertiary-fixed-variant": "#70103e",
+              "secondary-fixed": "#e1c7ff",
+              "tertiary-fixed": "#ff8db6",
+              "surface-bright": "#2c2c2d",
+              "background": "#0e0e0f",
+              "tertiary": "#ff96bb",
+              "primary-dim": "#7e51ff",
+              "on-surface-variant": "#adaaab",
+              "surface-container": "#1a191b",
+              "tertiary-container": "#fb81ae",
+              "on-secondary-fixed": "#471580",
+              "on-tertiary": "#690939",
+              "surface-variant": "#262627",
+              "on-tertiary-fixed": "#37001a",
+              "inverse-primary": "#6834eb",
+              "on-error-container": "#ffb2b9",
+              "on-secondary-container": "#e0c5ff",
+              "secondary-fixed-dim": "#d6b6ff",
+              "surface-tint": "#b6a0ff",
+              "error-container": "#a70138",
+              "inverse-surface": "#fcf8f9"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Manrope"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(19, 19, 20, 0.7);
+            backdrop-filter: blur(20px);
+        }
+        .primary-gradient {
+            background: linear-gradient(45deg, #b6a0ff, #7e51ff);
+        }
+        .ghost-border {
+            border: 1px solid rgba(72, 72, 73, 0.2);
+        }
+        .inner-glow {
+            box-shadow: inset 0 1px 0 0 rgba(182, 160, 255, 0.15);
+        }
+        .pulse-ring {
+            position: relative;
+        }
+        .pulse-ring::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(182, 160, 255, 0.2);
+            animation: pulse 2s cubic-bezier(0.2, 0, 0, 1) infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body overflow-hidden">
+<!-- TopNavBar Implementation -->
+<header class="fixed top-0 z-50 w-full h-16 bg-[#0e0e0f]/80 backdrop-blur-md flex justify-between items-center px-8 shadow-[0_8px_32px_rgba(182,160,255,0.05)]">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-bold tracking-tighter text-[#b6a0ff] font-['Space_Grotesk']">Qintara</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-[#b6a0ff] font-bold font-['Space_Grotesk'] tracking-tight hover:text-[#b6a0ff] transition-colors duration-300" href="#">Workspace</a>
+<a class="text-[#adaaab] font-['Space_Grotesk'] tracking-tight hover:text-[#b6a0ff] transition-colors duration-300" href="#">AI Chat</a>
+<a class="text-[#adaaab] font-['Space_Grotesk'] tracking-tight hover:text-[#b6a0ff] transition-colors duration-300" href="#">Insights</a>
+<a class="text-[#adaaab] font-['Space_Grotesk'] tracking-tight hover:text-[#b6a0ff] transition-colors duration-300" href="#">Library</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-[#adaaab] hover:text-[#b6a0ff] transition-all scale-95 active:scale-90">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-[#adaaab] hover:text-[#b6a0ff] transition-all scale-95 active:scale-90">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-highest border border-outline-variant/30">
+<img alt="User Profile" data-alt="Close up professional portrait of a user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdPy20n0rnwWKUMDkt8L0ZG3BWtM4D45GMbFck6PibFBshwcmtKOG0Bto-_qIO26ED1jCHSsqUUe6zrkXl7Dey8pVUaMR_YHU1RAofUPA2k3MWAv40nfmwUQOgfhQfs0hLJD8oEGkXzCHfXrf9w_kvTdEYJM4PAsTc3u39glcHdh16EfGdnUfdd0XPwMnNDjlQfK53Ol1PaG3h4mZO0EeCVIEdKAYn1SE_DD9LGS3NGs8bNkL7PiVbxrUb1A2jRGg03kYw13ohsX8"/>
+</div>
+</div>
+</header>
+<main class="pt-16 flex h-screen">
+<!-- Main Content Area -->
+<div class="flex-1 overflow-y-auto p-8 lg:p-12 scrollbar-hide">
+<div class="max-w-5xl mx-auto space-y-12">
+<!-- Introduction Header -->
+<section class="space-y-4">
+<span class="font-label text-xs uppercase tracking-[0.2em] text-primary">Intelligence Engine</span>
+<h1 class="font-headline text-5xl font-bold tracking-tighter leading-tight max-w-2xl">
+                        Unpack the visual <span class="text-transparent bg-clip-text primary-gradient">DNA</span> of any video.
+                    </h1>
+</section>
+<!-- URL Input Section -->
+<div class="relative group">
+<div class="absolute -inset-1 primary-gradient opacity-10 blur-xl group-hover:opacity-20 transition duration-1000"></div>
+<div class="relative flex items-center bg-surface-container-low rounded-xl p-2 ghost-border inner-glow">
+<div class="pl-4 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="link">link</span>
+</div>
+<input class="w-full bg-transparent border-none focus:ring-0 text-lg font-body px-4 py-4 placeholder:text-outline" placeholder="Paste YouTube URL to start analysis..." type="text"/>
+<button class="primary-gradient px-8 py-4 rounded-lg font-headline font-bold text-on-primary shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all scale-100 active:scale-95">
+                            Analyze
+                        </button>
+</div>
+</div>
+<!-- Bento Grid Content / Video Preview Area -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Large Video Placeholder -->
+<div class="col-span-12 lg:col-span-8 aspect-video rounded-xl bg-surface-container-lowest overflow-hidden relative ghost-border">
+<img alt="Video Preview" class="w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 transition-all duration-700" data-alt="Cinematic frame from a technology documentary video" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYN7ax_4sTPazKfjeekpo60jUF2kqnA-bAEC-FETvZxzfZTDWXfrsTYUcLX30Qjj2gBkGcjrAlP_5cutNocDtb1Ye55OVuFwTVEBMVDOn7_AaQMJ9Ls3D-DAwMIvG-nZPyNgU9dCgl_R1wsohgBeUBhycawkJ9JJ7kv5lOWSo3MhJG-Y7-sxGbkhkeHTtUGm0XRW8YLtyxfY3Yk_NahmfnH3ZPwyNC0XZNjtw4IGHNpL0wT-YPa_bqTRyiaSjj7vSCWYdkxNfv0-Y"/>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 bg-gradient-to-t from-background/90 to-transparent">
+<div class="pulse-ring mb-6">
+<div class="w-16 h-16 rounded-full primary-gradient flex items-center justify-center relative z-10">
+<span class="material-symbols-outlined text-3xl" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<p class="font-headline text-xl text-on-surface max-w-sm">Paste a link to initialize the Neural Core analysis engine</p>
+<p class="font-label text-xs text-on-surface-variant mt-2 tracking-widest uppercase">Awaiting source input</p>
+</div>
+</div>
+<!-- Secondary Features Cards -->
+<div class="col-span-12 lg:col-span-4 grid grid-rows-2 gap-6">
+<div class="bg-surface-container rounded-xl p-6 ghost-border flex flex-col justify-between hover:bg-surface-bright transition-all duration-300">
+<div>
+<span class="material-symbols-outlined text-primary mb-4" data-icon="psychology">psychology</span>
+<h3 class="font-headline text-lg font-semibold">Semantic Mapping</h3>
+<p class="text-on-surface-variant text-sm mt-2">Our AI maps the narrative structure and identifies key thematic clusters instantly.</p>
+</div>
+<div class="flex items-center gap-2 mt-4">
+<div class="w-2 h-2 rounded-full bg-primary/40"></div>
+<span class="text-[10px] font-label text-outline uppercase tracking-wider">Ready for input</span>
+</div>
+</div>
+<div class="bg-surface-container rounded-xl p-6 ghost-border flex flex-col justify-between hover:bg-surface-bright transition-all duration-300">
+<div>
+<span class="material-symbols-outlined text-primary mb-4" data-icon="auto_awesome">auto_awesome</span>
+<h3 class="font-headline text-lg font-semibold">Contextual Clips</h3>
+<p class="text-on-surface-variant text-sm mt-2">Automatically extract social-ready highlights based on viral potential metrics.</p>
+</div>
+<div class="flex items-center gap-2 mt-4">
+<div class="w-2 h-2 rounded-full bg-primary/40"></div>
+<span class="text-[10px] font-label text-outline uppercase tracking-wider">Core v2.4 Active</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Stats or Features -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-8 pt-6">
+<div class="space-y-1">
+<div class="text-2xl font-headline font-bold">140ms</div>
+<div class="text-xs font-label text-outline uppercase tracking-widest">Inference Latency</div>
+</div>
+<div class="space-y-1">
+<div class="text-2xl font-headline font-bold">4K HDR</div>
+<div class="text-xs font-label text-outline uppercase tracking-widest">Support Max</div>
+</div>
+<div class="space-y-1">
+<div class="text-2xl font-headline font-bold">Neural 2</div>
+<div class="text-xs font-label text-outline uppercase tracking-widest">Model Architecture</div>
+</div>
+<div class="space-y-1">
+<div class="text-2xl font-headline font-bold">Multi-modal</div>
+<div class="text-xs font-label text-outline uppercase tracking-widest">Analysis Mode</div>
+</div>
+</div>
+</div>
+</div>
+<!-- AI Chat Assistant Sidebar -->
+<aside class="hidden xl:flex w-[400px] flex-col bg-[#131314]/90 backdrop-blur-2xl border-l border-outline-variant/10 shadow-[-8px_0_32px_rgba(0,0,0,0.5)]">
+<div class="p-6 flex items-center justify-between border-b border-outline-variant/10">
+<div>
+<h2 class="font-headline text-lg font-bold">Neural Assistant</h2>
+<p class="text-[10px] font-label text-primary uppercase tracking-[0.2em]">Online &amp; Ready</p>
+</div>
+<div class="flex gap-2">
+<button class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="close_fullscreen">close_fullscreen</span>
+</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Chat Content -->
+<div class="flex-1 overflow-y-auto p-6 space-y-6">
+<!-- AI Message -->
+<div class="flex gap-4">
+<div class="w-8 h-8 rounded-lg primary-gradient flex-shrink-0 flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-lg" data-icon="smart_toy">smart_toy</span>
+</div>
+<div class="bg-surface-container rounded-xl rounded-tl-none p-4 space-y-3">
+<p class="text-sm leading-relaxed text-on-surface-variant">
+                            Greetings. I am the Qintara Analysis Core. Once you provide a video source, I can perform the following:
+                        </p>
+<ul class="space-y-2 text-xs font-label text-on-surface">
+<li class="flex items-center gap-2">
+<span class="w-1 h-1 rounded-full bg-primary"></span>
+                                Visual style sentiment analysis
+                            </li>
+<li class="flex items-center gap-2">
+<span class="w-1 h-1 rounded-full bg-primary"></span>
+                                Audio-to-text semantic mapping
+                            </li>
+<li class="flex items-center gap-2">
+<span class="w-1 h-1 rounded-full bg-primary"></span>
+                                Metadata generation for SEO
+                            </li>
+</ul>
+</div>
+</div>
+<!-- User Placeholder Prompt -->
+<div class="flex justify-end gap-4">
+<div class="bg-primary/10 rounded-xl rounded-tr-none p-4 border border-primary/20">
+<p class="text-sm text-primary">Analyze this for engagement peaks.</p>
+</div>
+</div>
+</div>
+<!-- Chat Input Area -->
+<div class="p-6 bg-surface-container-low/50">
+<div class="relative">
+<textarea class="w-full bg-surface-container-highest/50 border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-outline/50 resize-none font-body" placeholder="Ask anything about the video..." rows="2"></textarea>
+<button class="absolute bottom-3 right-3 w-8 h-8 rounded-lg primary-gradient flex items-center justify-center text-on-primary shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-lg" data-icon="send">send</span>
+</button>
+</div>
+<div class="mt-3 flex gap-2">
+<button class="text-[10px] font-label text-outline hover:text-primary transition-colors uppercase tracking-widest bg-surface-container px-2 py-1 rounded">Summary</button>
+<button class="text-[10px] font-label text-outline hover:text-primary transition-colors uppercase tracking-widest bg-surface-container px-2 py-1 rounded">Keywords</button>
+<button class="text-[10px] font-label text-outline hover:text-primary transition-colors uppercase tracking-widest bg-surface-container px-2 py-1 rounded">Segments</button>
+</div>
+</div>
+</aside>
+</main>
+<!-- Global Pulse Decoration -->
+<div class="fixed bottom-0 right-0 w-[500px] h-[500px] primary-gradient opacity-5 rounded-full blur-[120px] pointer-events-none -z-10 translate-x-1/4 translate-y-1/4"></div>
+</body></html>
