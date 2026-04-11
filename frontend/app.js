@@ -109,6 +109,13 @@ const initVideo = async (url) => {
 
 loadVideoBtn.addEventListener('click', async () => {
   const candidate = videoUrlInput.value.trim() || defaultVideoUrl;
+  
+  // Transition UI: Hide center input, show active Notebook Workspace
+  if (sourceInputSection && mainWorkspace) {
+    sourceInputSection.style.display = 'none';
+    mainWorkspace.style.display = 'grid';
+  }
+
   await initVideo(candidate);
 });
 
@@ -168,15 +175,51 @@ startLearningButtons.forEach((button) => {
   button.addEventListener('click', () => {
     learningWorkspace?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setTimeout(() => {
-      questionInput?.focus();
+      if (sourceInputSection && sourceInputSection.style.display !== 'none') {
+        videoUrlInput?.focus({ preventScroll: true });
+      } else {
+        questionInput?.focus({ preventScroll: true });
+      }
     }, 450);
   });
 });
+  // videoUrlInput.value = defaultVideoUrl;
+  // initVideo(defaultVideoUrl);
 
-videoUrlInput.value = defaultVideoUrl;
-initVideo(defaultVideoUrl);
+  // NotebookLM Layout switching and Tabs logic
+  const sourceInputSection = document.getElementById('sourceInputSection');     
+  const mainWorkspace = document.getElementById('mainWorkspace');
 
-// Philosophy Section GSAP Animation
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Deactivate all
+      tabBtns.forEach(b => {
+         b.classList.remove('active');
+         b.style.background = 'transparent';
+         b.style.border = '1px solid transparent';
+         b.style.color = 'var(--text-secondary)';
+      });
+      tabContents.forEach(content => content.style.display = 'none');
+
+      // Activate clicked
+      btn.classList.add('active');
+      btn.style.background = 'var(--surface-light)';
+      btn.style.border = '1px solid rgba(255,255,255,0.1)';
+      btn.style.color = 'white';
+
+      // Show content
+      const targetId = 'tab-' + btn.getAttribute('data-tab');
+      const contentEl = document.getElementById(targetId);
+      if(contentEl) {
+        contentEl.style.display = 'flex';
+      }
+    });
+  });
+
+  // Philosophy Section GSAP Animation
 document.addEventListener('DOMContentLoaded', () => {
   const philSection = document.querySelector('.philosophy-section');
   if (!philSection || typeof gsap === 'undefined') return;
@@ -320,4 +363,236 @@ document.addEventListener('DOMContentLoaded', () => {
       { x: 0, opacity: 0.8, duration: 1.5, ease: "power2.out", delay: 0.2 }
     );
   }
-});
+})
+
+
+// Notes Generator Logic
+const generateNotesBtn = document.getElementById('generateNotesBtn');
+const notesContainer = document.getElementById('notesContainer');
+const notesPlaceholder = document.getElementById('notesPlaceholder');
+
+if (generateNotesBtn) {
+  generateNotesBtn.addEventListener('click', async () => {
+    if (!activeVideoUrl || !isReady) {
+      alert('Please load a video first!');
+      return;
+    }
+
+    generateNotesBtn.disabled = true;
+    generateNotesBtn.textContent = 'Generating...';
+
+    try {
+      const resp = await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoUrl: activeVideoUrl })
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok || !data.ok) {
+        throw new Error(data.error || 'Failed to generate notes.');
+      }
+
+      let text = (data.notes || '');
+      // Markdown Parsing
+      text = text.replace(/^# (.*$)/gim, '<h2 style="margin-top:20px; font-weight: bold;">$1</h2>');
+      text = text.replace(/^## (.*$)/gim, '<h3 style="margin-top:16px; font-weight: bold;">$1</h3>');
+      text = text.replace(/^### (.*$)/gim, '<h4 style="margin-top:12px; font-weight: bold;">$1</h4>');
+      text = text.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
+      text = text.replace(/\n\n/g, '<br/><br/>');
+      text = text.replace(/\n/g, '<br/>');
+
+      if (notesPlaceholder) notesPlaceholder.style.display = 'none';
+      if (notesContainer) {
+        notesContainer.style.display = 'block';
+        notesContainer.innerHTML = text;
+      }
+
+    } catch(err) {
+      alert('Error generating notes: ' + err.message);
+    }
+    generateNotesBtn.disabled = false;
+    generateNotesBtn.textContent = 'Generate Notes';
+  });
+}
+
+// Quiz and Weak Topics Logic
+const generateQuizBtn = document.getElementById('generateQuizBtn');
+const quizContainer = document.getElementById('quizContainer');
+const quizForm = document.getElementById('quizForm');
+const submitQuizBtn = document.getElementById('submitQuizBtn');
+const quizResults = document.getElementById('quizResults');
+
+const analyzeWeakBtn = document.getElementById('analyzeWeakbtn');
+const weakTopicsContainer = document.getElementById('weakTopicsContainer');
+const weakPlaceholderIcon = document.getElementById('weakPlaceholderIcon');
+const weakPlaceholderTitle = document.getElementById('weakPlaceholderTitle');
+const weakPlaceholderDesc = document.getElementById('weakPlaceholderDesc');
+
+let currentQuizData = null;
+
+if (generateQuizBtn) {
+  generateQuizBtn.addEventListener('click', async () => {
+    if (!activeVideoUrl || !isReady) {
+      alert('Please load a video first!');
+      return;
+    }
+
+    generateQuizBtn.disabled = true;
+    generateQuizBtn.textContent = 'Generating...';
+
+    try {
+      const resp = await fetch('/api/quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoUrl: activeVideoUrl })
+      });
+
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) throw new Error(data.error);
+
+      currentQuizData = data.quiz;
+      renderQuiz(currentQuizData);
+    } catch(err) {
+      alert('Error generating quiz: ' + err.message);
+    }
+
+    generateQuizBtn.disabled = false;
+    generateQuizBtn.style.display = 'none';
+    generateQuizBtn.textContent = 'Generate Another Quiz';
+  });
+}
+
+function renderQuiz(quiz) {
+  quizContainer.style.display = 'block';
+  quizForm.innerHTML = '';
+  quizResults.innerHTML = '';
+  submitQuizBtn.style.display = 'inline-block';
+
+  quiz.forEach((q, index) => {
+    const qDiv = document.createElement('div');
+    qDiv.style.marginBottom = '20px';
+    
+    const title = document.createElement('p');
+    title.innerHTML = '<strong>' + (index + 1) + '. ' + q.question + '</strong>';
+    qDiv.appendChild(title);
+
+    q.options.forEach((opt, optIndex) => {
+      const label = document.createElement('label');
+      label.style.display = 'block';
+      label.style.marginBottom = '8px';
+      label.style.cursor = 'pointer';
+      
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'q' + index;
+      input.value = optIndex;
+      input.style.marginRight = '8px';
+
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(opt));
+      qDiv.appendChild(label);
+    });
+
+    const explanation = document.createElement('div');
+    explanation.id = 'expl_' + index;
+    explanation.style.display = 'none';
+    explanation.style.fontSize = '0.9em';
+    explanation.style.color = '#ddd';
+    explanation.style.marginTop = '8px';
+    explanation.style.padding = '8px 12px';
+    explanation.style.backgroundColor = 'rgba(255,255,255,0.05)';
+    explanation.style.borderRadius = '4px';
+    explanation.innerHTML = '<i>' + q.explanation + '</i>';
+    qDiv.appendChild(explanation);
+
+    quizForm.appendChild(qDiv);
+  });
+}
+
+if (submitQuizBtn) {
+  submitQuizBtn.addEventListener('click', async () => {
+    if (!currentQuizData) return;
+
+    let score = 0;
+    let missedDetails = [];
+    const formData = new FormData(quizForm);
+
+    currentQuizData.forEach((q, index) => {
+      const selected = formData.get('q' + index);
+      const explNode = document.getElementById('expl_' + index);
+
+      if (selected !== null && parseInt(selected) === q.answerIndex) {
+        score++;
+        explNode.style.borderLeft = '4px solid #4CAF50';
+      } else {
+        missedDetails.push(q.question);
+        explNode.style.borderLeft = '4px solid #F44336';
+      }
+      
+      explNode.style.display = 'block';
+    });
+
+    submitQuizBtn.style.display = 'none';
+    generateQuizBtn.style.display = 'inline-block';
+    generateQuizBtn.textContent = 'Generate Next Quiz';
+
+    quizResults.textContent = 'You scored ' + score + ' out of ' + currentQuizData.length + '!';
+
+    if (activeVideoUrl) {
+      try {
+        await fetch('/api/quiz/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoUrl: activeVideoUrl, score, total: currentQuizData.length, missed: missedDetails })
+        });
+      } catch (err) {
+        console.error('Could not submit quiz score:', err);
+      }
+    }
+  });
+}
+
+if (analyzeWeakBtn) {
+  analyzeWeakBtn.addEventListener('click', async () => {
+    if (!activeVideoUrl || !isReady) {
+      alert('Please load a video first!');
+      return;
+    }
+
+    analyzeWeakBtn.disabled = true;
+    analyzeWeakBtn.textContent = 'Analyzing...';
+
+    try {
+      const resp = await fetch('/api/weak-topics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoUrl: activeVideoUrl })
+      });
+
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) throw new Error(data.error);
+
+      let text = (data.weakTopics || '');
+      text = text.replace(/^# (.*$)/gim, '<h2 style="margin-top:16px; font-weight: bold;">$1</h2>');
+      text = text.replace(/^## (.*$)/gim, '<h3 style="margin-top:12px; font-weight: bold;">$1</h3>');
+      text = text.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
+      text = text.replace(/\n\n/g, '<br/><br/>');
+      text = text.replace(/\n/g, '<br/>');
+
+      weakPlaceholderIcon.style.display = 'none';
+      weakPlaceholderTitle.style.display = 'none';
+      weakPlaceholderDesc.style.display = 'none';
+      
+      weakTopicsContainer.style.display = 'block';
+      weakTopicsContainer.innerHTML = text;
+
+    } catch(err) {
+      alert('Error analyzing weak topics: ' + err.message);
+    }
+
+    analyzeWeakBtn.disabled = false;
+    analyzeWeakBtn.textContent = 'Refresh Weak Topics';
+  });
+}

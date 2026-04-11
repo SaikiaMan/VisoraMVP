@@ -4,6 +4,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { chunkTexts } from './backend/chunk-text.js';
 import { generateAnswer } from './backend/generate-answer.js';
+import { generateNotes } from './backend/generate-notes.js';
+import { generateQuiz } from './backend/generate-quiz.js';
+import { generateWeakTopics } from './backend/generate-weak-topics.js';
 import { YoutubeTranscript } from './backend/youtubefetcher.js';
 import { cleanTranscript } from './backend/clean-transcript.js';
 import {
@@ -13,6 +16,7 @@ import {
   retrieveRelevantChunks,
   storeEmbeddings,
   hasStoredChunks,
+  getAllChunks,
 } from './backend/vectordatabase.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -23,6 +27,7 @@ const port = Number(process.env.PORT || 3000);
 const DEFAULT_VIDEO_URL = 'https://youtu.be/dAF5FngVa7A?si=W0YcpQwORJI0rApq';
 const readyNamespaces = new Set();
 const initPromises = new Map();
+const userState = new Map(); // stores { doubts: [], quizzes: [] } per namespace
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'frontend')));
@@ -247,6 +252,10 @@ app.post('/api/ask', async (req, res) => {
 
   try {
     const namespace = await ensureVideoReady(videoUrl);
+
+    if (!userState.has(namespace)) userState.set(namespace, { doubts: [], quizzes: [] });
+    userState.get(namespace).doubts.push(query);
+
     const relevantChunksMatchingQuery = await retrieveRelevantChunks(query, namespace);
     const answer = await generateAnswer(query, relevantChunksMatchingQuery);
 
@@ -262,6 +271,81 @@ app.post('/api/ask', async (req, res) => {
       ok: false,
       error: (error && error.message) || 'Failed to answer query.',
     });
+  }
+});
+
+app.post('/api/notes', async (req, res) => {
+  const videoUrl = (req.body?.videoUrl || DEFAULT_VIDEO_URL).trim();
+
+  try {
+    const namespace = await ensureVideoReady(videoUrl);
+    if (!userState.has(namespace)) userState.set(namespace, { doubts: [], quizzes: [] });
+    
+    const allChunks = await getAllChunks(namespace);
+    const notesChunkText = allChunks; // already strings
+    const notes = await generateNotes(notesChunkText);
+
+    res.json({
+      ok: true,
+      notes,
+      namespace,
+    });
+  } catch (error) {
+    console.error('Failed to generate notes:', error);
+    res.status(500).json({
+      ok: false,
+      error: (error && error.message) || 'Failed to generate notes.',
+    });
+  }
+});
+
+app.post('/api/quiz', async (req, res) => {
+  const videoUrl = (req.body?.videoUrl || DEFAULT_VIDEO_URL).trim();
+
+  try {
+    const namespace = await ensureVideoReady(videoUrl);
+    if (!userState.has(namespace)) userState.set(namespace, { doubts: [], quizzes: [] });
+
+    const allChunks = await getAllChunks(namespace);
+    const quiz = await generateQuiz(allChunks);
+
+    res.json({ ok: true, quiz, namespace });
+  } catch (error) {
+    console.error('Failed to generate quiz:', error);
+    res.status(500).json({ ok: false, error: (error && error.message) || 'Failed to generate quiz.' });
+  }
+});
+
+// submit a single quiz score for weak topic analysis 
+app.post('/api/quiz/submit', async (req, res) => {
+  const videoUrl = (req.body?.videoUrl || DEFAULT_VIDEO_URL).trim();
+  const { score, total, missed } = req.body;
+
+  try {
+    const namespace = await ensureVideoReady(videoUrl);
+    if (!userState.has(namespace)) userState.set(namespace, { doubts: [], quizzes: [] });
+
+    userState.get(namespace).quizzes.push({ score, total, missed: missed || [] });
+
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: (error && error.message) || 'Failed to submit quiz.' });
+  }
+});
+
+app.post('/api/weak-topics', async (req, res) => {
+  const videoUrl = (req.body?.videoUrl || DEFAULT_VIDEO_URL).trim();
+
+  try {
+    const namespace = await ensureVideoReady(videoUrl);
+    const state = userState.get(namespace) || { doubts: [], quizzes: [] };
+    const allChunks = await getAllChunks(namespace);
+
+    const weakTopics = await generateWeakTopics(allChunks, state);
+
+    res.json({ ok: true, weakTopics });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: (error && error.message) || 'Failed to generate weak topics.' });
   }
 });
 
