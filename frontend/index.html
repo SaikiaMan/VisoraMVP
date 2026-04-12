@@ -13,7 +13,11 @@
   <body>
     <header class="navbar">
       <div class="brand">Visora</div>
-      <button class="nav-cta" type="button" data-start-learning>Start Learning</button>
+      <div class="navbar-actions">
+        <button class="nav-cta secondary-btn" type="button" id="signupBtn" style="display: none;">Sign Up</button>
+        <button class="nav-cta danger-btn" type="button" id="logoutBtn" style="display: none;">Logout</button>
+        <button class="nav-cta" type="button" data-start-learning>Start Learning</button>
+      </div>
     </header>
 
     <section class="hero-full-bg" id="coded-hero">
@@ -297,7 +301,244 @@
     <!-- Global Pulse Decoration for dark theme -->
     <div class="glow-bg"></div>
 
+    <!-- Auth Modal - Sign Up / Login Choice -->
+    <div id="authModal" class="modal hidden">
+      <div class="modal-overlay" id="modalOverlay"></div>
+      <div class="modal-content">
+        <!-- Choice Screen -->
+        <div id="choiceScreen" class="modal-section active">
+          <div class="modal-header">
+            <h2>Welcome to Visora</h2>
+            <p>Choose how to proceed</p>
+          </div>
+          <div class="choice-buttons">
+            <button id="createAccountBtn" class="choice-btn primary">
+              <span class="material-symbols-outlined">person_add</span>
+              <strong>Create New Account</strong>
+              <span>Sign up with email</span>
+            </button>
+            <button id="loginBtn" class="choice-btn secondary">
+              <span class="material-symbols-outlined">login</span>
+              <strong>Log In</strong>
+              <span>Login to existing account</span>
+            </button>
+          </div>
+          <button id="closeChoiceBtn" class="modal-close">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <!-- Sign Up Form -->
+        <div id="signupForm" class="modal-section">
+          <div class="modal-header">
+            <button id="backToChoiceFromSignup" class="back-btn">
+              <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <h2>Create Account</h2>
+          </div>
+          <form id="signupFormElement" class="auth-form">
+            <div class="form-group">
+              <label for="fullName">Full Name</label>
+              <input type="text" id="fullName" placeholder="e.g. John Doe" required />
+            </div>
+            <div class="form-group">
+              <label for="signupEmail">Email</label>
+              <input type="email" id="signupEmail" placeholder="your@email.com" required />
+            </div>
+            <div class="form-group">
+              <label for="signupPassword">Password</label>
+              <input type="password" id="signupPassword" placeholder="Min 8 characters" required />
+            </div>
+            <button type="submit" class="submit-btn">Create Account</button>
+          </form>
+          <p class="form-message" id="signupMessage"></p>
+        </div>
+
+        <!-- Login Form -->
+        <div id="loginForm" class="modal-section">
+          <div class="modal-header">
+            <button id="backToChoiceFromLogin" class="back-btn">
+              <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <h2>Log In</h2>
+          </div>
+          <form id="loginFormElement" class="auth-form">
+            <div class="form-group">
+              <label for="loginEmail">Email</label>
+              <input type="email" id="loginEmail" placeholder="your@email.com" required />
+            </div>
+            <div class="form-group">
+              <label for="loginPassword">Password</label>
+              <input type="password" id="loginPassword" placeholder="Your password" required />
+            </div>
+            <button type="submit" class="submit-btn">Log In</button>
+          </form>
+          <p class="form-message" id="loginMessage"></p>
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script type="module" src="/app.js"></script>
-  </body>
-</html>
+    <script type="module">
+      import { signUpUser, loginUser, logoutUser, getCurrentUser } from '/auth.js';
+
+      const authModal = document.getElementById('authModal');
+      const modalOverlay = document.getElementById('modalOverlay');
+      const choiceScreen = document.getElementById('choiceScreen');
+      const signupForm = document.getElementById('signupForm');
+      const loginForm = document.getElementById('loginForm');
+      
+      const signupBtn = document.getElementById('signupBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const createAccountBtn = document.getElementById('createAccountBtn');
+      const loginBtn = document.getElementById('loginBtn');
+      const closeChoiceBtn = document.getElementById('closeChoiceBtn');
+      const backToChoiceFromSignup = document.getElementById('backToChoiceFromSignup');
+      const backToChoiceFromLogin = document.getElementById('backToChoiceFromLogin');
+      
+      const signupFormElement = document.getElementById('signupFormElement');
+      const loginFormElement = document.getElementById('loginFormElement');
+      const signupMessage = document.getElementById('signupMessage');
+      const loginMessage = document.getElementById('loginMessage');
+
+      // Check authentication status on page load
+      async function initializeAuthUI() {
+        try {
+          const user = await getCurrentUser();
+          if (user) {
+            // User is logged in
+            console.log('✅ User logged in:', user.email);
+            signupBtn.style.display = 'none';
+            logoutBtn.style.display = 'block';
+          } else {
+            // User not logged in
+            console.log('No active session');
+            signupBtn.style.display = 'block';
+            logoutBtn.style.display = 'none';
+          }
+        } catch (error) {
+          console.error('Error checking auth status:', error);
+          signupBtn.style.display = 'block';
+          logoutBtn.style.display = 'none';
+        }
+      }
+
+      // Helper functions
+      function showModal() {
+        authModal.classList.remove('hidden');
+        authModal.classList.add('active');
+      }
+
+      function hideModal() {
+        authModal.classList.add('hidden');
+        authModal.classList.remove('active');
+      }
+
+      function showSection(section) {
+        choiceScreen.classList.remove('active');
+        signupForm.classList.remove('active');
+        loginForm.classList.remove('active');
+        section.classList.add('active');
+      }
+
+      // Event Listeners
+      signupBtn.addEventListener('click', showModal);
+      logoutBtn.addEventListener('click', async () => {
+        const result = await logoutUser();
+        if (result.success) {
+          console.log('✅ Logged out successfully');
+          signupBtn.style.display = 'block';
+          logoutBtn.style.display = 'none';
+          // Optional: reload page to reset app state
+          window.location.reload();
+        } else {
+          console.error('Logout failed:', result.error);
+        }
+      });
+      
+      modalOverlay.addEventListener('click', hideModal);
+      closeChoiceBtn.addEventListener('click', hideModal);
+
+      createAccountBtn.addEventListener('click', () => {
+        showSection(signupForm);
+      });
+
+      loginBtn.addEventListener('click', () => {
+        showSection(loginForm);
+      });
+
+      backToChoiceFromSignup.addEventListener('click', () => {
+        showSection(choiceScreen);
+        signupMessage.textContent = '';
+      });
+
+      backToChoiceFromLogin.addEventListener('click', () => {
+        showSection(choiceScreen);
+        loginMessage.textContent = '';
+      });
+
+      // Sign Up Form Submission
+      signupFormElement.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const fullName = document.getElementById('fullName').value;
+        const email = document.getElementById('signupEmail').value;
+        const password = document.getElementById('signupPassword').value;
+
+        signupMessage.textContent = 'Creating account...';
+        signupMessage.classList.remove('error');
+
+        const result = await signUpUser(email, password, fullName);
+        
+        if (result.success) {
+          signupMessage.textContent = '✅ Account created! Redirecting...';
+          signupMessage.classList.add('success');
+          setTimeout(() => {
+            // Update UI before reload
+            signupBtn.style.display = 'none';
+            logoutBtn.style.display = 'block';
+            hideModal();
+            // Reset form
+            signupFormElement.reset();
+            signupMessage.textContent = '';
+          }, 1500);
+        } else {
+          signupMessage.textContent = '❌ ' + result.error;
+          signupMessage.classList.add('error');
+        }
+      });
+
+      // Login Form Submission
+      loginFormElement.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        loginMessage.textContent = 'Logging in...';
+        loginMessage.classList.remove('error');
+
+        const result = await loginUser(email, password);
+        
+        if (result.success) {
+          loginMessage.textContent = '✅ Login successful! Redirecting...';
+          loginMessage.classList.add('success');
+          setTimeout(() => {
+            // Update UI before reload
+            signupBtn.style.display = 'none';
+            logoutBtn.style.display = 'block';
+            hideModal();
+            // Reset form
+            loginFormElement.reset();
+            loginMessage.textContent = '';
+          }, 1500);
+        } else {
+          loginMessage.textContent = '❌ ' + result.error;
+          loginMessage.classList.add('error');
+        }
+      });
+
+      // Initialize auth UI on page load
+      initializeAuthUI();
+    </script>

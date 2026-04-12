@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createClient } from '@supabase/supabase-js';
 import { chunkTexts } from './backend/chunk-text.js';
 import { generateAnswer } from './backend/generate-answer.js';
 import { generateNotes } from './backend/generate-notes.js';
@@ -29,8 +30,13 @@ const readyNamespaces = new Set();
 const initPromises = new Map();
 const userState = new Map(); // stores { doubts: [], quizzes: [] } per namespace
 
+// Initialize Supabase admin client (for server-side operations)
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'frontend')));
 
 const extractVideoId = (url) => {
   const match = url.match(/(?:v=|youtu\.be\/)([^&?/]{11})/);
@@ -223,6 +229,68 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true });
 });
 
+// Serve Supabase configuration to frontend
+app.get('/api/config', (req, res) => {
+  res.json({
+    supabaseUrl: process.env.SUPABASE_URL,
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+  });
+});
+
+// Auto-confirm user email after signup
+app.post('/api/confirm-email', async (req, res) => {
+  const { userId, email } = req.body;
+
+  if (!userId || !email) {
+    return res.status(400).json({
+      ok: false,
+      error: 'userId and email are required',
+    });
+  }
+
+  try {
+    // Check if service role key is available
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY not configured. Email confirmation disabled.');
+      return res.status(200).json({
+        ok: true,
+        message: 'Service role key not configured',
+      });
+    }
+
+    console.log(`📧 Confirming email for user: ${email} (ID: ${userId})`);
+    
+    // Use admin API to confirm email - correct method
+    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      email_confirm: true,
+      user_metadata: {
+        email_confirmed_at: new Date().toISOString(),
+      }
+    });
+
+    if (error) {
+      console.error('❌ Email confirmation error:', error);
+      return res.status(500).json({
+        ok: false,
+        error: error.message,
+      });
+    }
+
+    console.log(`✅ Email confirmed for user: ${email}`);
+    res.json({
+      ok: true,
+      message: 'Email confirmed successfully',
+      data: data,
+    });
+  } catch (error) {
+    console.error('❌ Email confirmation failed:', error.message);
+    res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+});
+
 app.post('/api/init', async (req, res) => {
   const videoUrl = (req.body?.videoUrl || DEFAULT_VIDEO_URL).trim();
 
@@ -348,6 +416,9 @@ app.post('/api/weak-topics', async (req, res) => {
     res.status(500).json({ ok: false, error: (error && error.message) || 'Failed to generate weak topics.' });
   }
 });
+
+// Serve static files (CSS, JS, images, etc.) after all API routes
+app.use(express.static(path.join(__dirname, 'frontend')));
 
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
