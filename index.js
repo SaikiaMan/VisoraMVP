@@ -2,6 +2,10 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import helmet from 'helmet';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+import logger from './backend/logger.js';
 import { chunkTexts } from './backend/chunk-text.js';
 import { generateAnswer } from './backend/generate-answer.js';
 import { YoutubeTranscript } from './backend/youtubefetcher.js';
@@ -24,7 +28,31 @@ const DEFAULT_VIDEO_URL = 'https://youtu.be/dAF5FngVa7A?si=W0YcpQwORJI0rApq';
 const readyNamespaces = new Set();
 const initPromises = new Map();
 
-app.use(express.json());
+// ── Security & middleware ──────────────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      imgSrc: ["'self'", "data:", "https://images.unsplash.com", "https://cdn.unsplash.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      connectSrc: ["'self'", "https://api.openai.com"],
+    },
+  },
+}));
+app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
+app.use(express.json({ limit: '1mb' }));
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 15,             // 15 requests per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: 'Too many requests. Please try again later.' },
+});
+app.use('/api/', apiLimiter);
+
 app.use(express.static(path.join(__dirname, 'frontend')));
 
 const extractVideoId = (url) => {
@@ -83,36 +111,35 @@ const ensureMinimumChunkCount = (chunks, minCount = 12, minChunkLength = 60) => 
 };
 
 const processYoutube = async (videoUrl, namespace) => {
-  console.log('🎥 Processing YouTube video:', videoUrl);
-  console.log('📌 Namespace:', namespace);
+  logger.info({ videoUrl, namespace }, 'Processing YouTube video');
 
   try {
-    console.log('⏳ Fetching transcript...');
+    logger.info('Fetching transcript...');
     const transcriptArr = await YoutubeTranscript.fetchTranscript(videoUrl);
-    console.log('✓ Transcript fetched:', transcriptArr.length, 'items');
+    logger.info({ count: transcriptArr.length }, 'Transcript fetched');
 
     if (!Array.isArray(transcriptArr) || transcriptArr.length === 0) {
       const msg = 'Could not fetch transcript. Make sure the video has captions (auto-generated or manual).';
-      console.warn('❌', msg);
+      logger.warn(msg);
       throw new Error(msg);
     }
 
-    console.log('🧹 Cleaning transcript...');
+    logger.info('Cleaning transcript...');
     const cleanedArr = cleanTranscript(transcriptArr);
 
     const fullText = cleanedArr.map((item) => item.text).join(' ').trim();
     if (!fullText) {
       throw new Error('Transcript text is empty after cleaning.');
     }
-    console.log('✓ Cleaned text length:', fullText.length);
+    logger.info({ length: fullText.length }, 'Cleaned text');
 
-    console.log('📦 Chunking text...');
+    logger.info('Chunking text...');
     let chunks = chunkTexts(fullText);
 
     // Adaptive re-chunking: if transcript is long but chunk count is still low,
     // split into smaller chunks to improve retrieval coverage.
     if (fullText.length > 1200 && chunks.length < 8) {
-      console.log('♻️ Re-chunking with smaller windows for better coverage...');
+      logger.info('Re-chunking with smaller windows for better coverage');
       chunks = chunkTexts(fullText, 260, 60);
     }
 
@@ -138,7 +165,7 @@ const processYoutube = async (videoUrl, namespace) => {
       }
 
       if (fallbackChunks.length > chunks.length) {
-        console.log(`♻️ Using fallback sliding chunks: ${fallbackChunks.length}`);
+        logger.info({ count: fallbackChunks.length }, 'Using fallback sliding chunks');
         chunks = fallbackChunks;
       }
     }
@@ -146,45 +173,44 @@ const processYoutube = async (videoUrl, namespace) => {
     if (!Array.isArray(chunks) || chunks.length === 0) {
       throw new Error('No chunks could be created from transcript.');
     }
-    console.log('✓ Created', chunks.length, 'chunks');
+    logger.info({ count: chunks.length }, 'Chunks created');
 
-    console.log('💾 Storing embeddings...');
+    logger.info('Storing embeddings...');
     await storeEmbeddings(chunks, namespace);
 
-    console.log(`✅ Video processed successfully. Namespace: ${namespace}, Chunks: ${chunks.length}`);
+    logger.info({ namespace, chunks: chunks.length }, 'Video processed successfully');
   } catch (error) {
-    console.error('❌ Failed to process YouTube video:', error.message);
+    logger.error({ err: error.message }, 'Failed to process YouTube video');
     throw new Error(`Video processing failed: ${error.message}`);
   }
 };
 
 const initNamespace = async (videoUrl) => {
   const namespace = extractVideoId(videoUrl);
-  console.log('🔄 Initialize namespace for video ID:', namespace);
+  logger.info({ namespace }, 'Initializing namespace');
 
   const indexExists = await checkIndexExists();
-  console.log('📊 Index exists:', indexExists);
+  logger.info({ indexExists }, 'Index check');
 
   if (!indexExists) {
     await createIndex();
   } else {
     const indexStats = await describeIndexStats();
-    console.log('📈 Index stats:', indexStats);
+    logger.info({ indexStats }, 'Index stats');
   }
 
   // Check if this specific namespace already has chunks stored
-  console.log('🔍 Checking if chunks exist for namespace:', namespace);
   const chunksExist = await hasStoredChunks(namespace);
-  console.log('📦 Chunks exist:', chunksExist);
+  logger.info({ namespace, chunksExist }, 'Chunk existence check');
 
   if (!chunksExist) {
-    console.log('⬇️  Downloading and processing new video...');
+    logger.info('Downloading and processing new video...');
     await processYoutube(videoUrl, namespace);
   } else {
-    console.log('✓ Video already processed, using cached chunks');
+    logger.info('Video already processed, using cached chunks');
   }
 
-  console.log('✅ Namespace initialization complete:', namespace);
+  logger.info({ namespace }, 'Namespace initialization complete');
   return namespace;
 };
 
@@ -222,13 +248,13 @@ app.post('/api/init', async (req, res) => {
   const videoUrl = (req.body?.videoUrl || DEFAULT_VIDEO_URL).trim();
 
   try {
-    console.log('Initializing for video:', videoUrl);
+    logger.info({ videoUrl }, 'Initializing video');
     const namespace = await ensureVideoReady(videoUrl);
-    console.log('Video initialization successful, namespace:', namespace);
+    logger.info({ namespace }, 'Video initialization successful');
     res.json({ ok: true, namespace, videoUrl });
   } catch (error) {
     const errorMsg = error && error.message ? error.message : 'Failed to initialize video context.';
-    console.error('Initialization failed:', errorMsg);
+    logger.error({ err: errorMsg }, 'Initialization failed');
     res.status(500).json({
       ok: false,
       error: errorMsg,
@@ -245,6 +271,12 @@ app.post('/api/ask', async (req, res) => {
     return;
   }
 
+  // Input sanitization: reject excessively long queries
+  if (query.length > 500) {
+    res.status(400).json({ ok: false, error: 'Query must be 500 characters or fewer.' });
+    return;
+  }
+
   try {
     const namespace = await ensureVideoReady(videoUrl);
     const relevantChunksMatchingQuery = await retrieveRelevantChunks(query, namespace);
@@ -257,7 +289,7 @@ app.post('/api/ask', async (req, res) => {
       namespace,
     });
   } catch (error) {
-    console.error('Failed to answer query:', error);
+    logger.error({ err: error?.message }, 'Failed to answer query');
     res.status(500).json({
       ok: false,
       error: (error && error.message) || 'Failed to answer query.',
@@ -270,5 +302,5 @@ app.use((req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Visora web app is running at http://localhost:${port}`);
+  logger.info({ port }, 'Visora web app is running');
 });

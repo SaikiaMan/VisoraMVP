@@ -148,10 +148,7 @@ askForm.addEventListener('submit', async (event) => {
     }
 
     const answerText = data.answer || 'I could not find an answer.';
-    const details = data.namespace
-      ? `\n\n[Video: ${data.namespace} | Chunks: ${data.chunkCount ?? 0}]`
-      : '';
-    addMessage('ai', `${answerText}${details}`);
+    addMessage('ai', answerText);
     console.log(`✓ Answer generated using ${data.chunkCount} chunks in namespace ${data.namespace}`);
     setChip(chatStatus, '✓ Ready');
   } catch (error) {
