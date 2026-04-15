@@ -1,8 +1,24 @@
+import logger from './logger.js';
+
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
+async function callGroq(messages) {
+  const resp = await fetch(GROQ_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({ model: GROQ_MODEL, messages }),
+  });
+
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(`Groq API error: ${JSON.stringify(data)}`);
+  return data?.choices?.[0]?.message?.content?.trim() ?? '';
+}
+
 async function generateAnswer(query, retrievedChunks) {
-  // Even with empty chunks, provide what we can
   const hasContext = Array.isArray(retrievedChunks) && retrievedChunks.length > 0;
 
   if (!hasContext) {
@@ -10,50 +26,67 @@ async function generateAnswer(query, retrievedChunks) {
   }
 
   if (!process.env.GROQ_API_KEY) {
-    throw new Error(
-      'GROQ_API_KEY is not set. Please add it to your .env file before running the app.'
-    );
+    throw new Error('GROQ_API_KEY is not set. Please add it to your .env file before running the app.');
   }
 
   const context = retrievedChunks.join(' ');
 
-  const systemMessage = `You are an AI tutor helping students learn from video lectures and transcripts.
+  try {
+    // ── PASS 1: Raw answer ────────────────────────────────────────────────
+    const rawAnswer = await callGroq([
+      {
+        role: 'system',
+        content: `You are an AI tutor helping students learn from video lectures and transcripts.
 Your role is to:
 1. Answer questions based ONLY on the provided context/transcript
 2. Extract relevant information from the context to answer the student's question
 3. Be helpful and explain concepts clearly
 4. If the exact answer isn't in the context, try to provide related information that might help
 
-Important: Only decline to answer if the context is completely irrelevant to the question, not just because it's not a perfect match. Try your best to find connections and provide value to the student.`;
-
-  const userMessage = `Transcript Context: ${context}\n\nQuestion: ${query}\n\nPlease answer based on the provided transcript context. Even if it's not a perfect match, try to provide helpful information related to the question.`;
-
-  try {
-    const resp = await fetch(GROQ_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+Important: Only decline to answer if the context is completely irrelevant to the question.`,
       },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: systemMessage },
-          { role: 'user', content: userMessage },
-        ],
-      }),
-    });
+      {
+        role: 'user',
+        content: `Transcript Context: ${context}\n\nQuestion: ${query}\n\nPlease answer based on the provided transcript context.`,
+      },
+    ]);
 
-    const data = await resp.json();
+    // ── PASS 2: Refinement ────────────────────────────────────────────────
+    const refinedAnswer = await callGroq([
+      {
+        role: 'system',
+        content: `You are a response editor.
 
-    if (!resp.ok) {
-      throw new Error(`Groq API error: ${JSON.stringify(data)}`);
-    }
+Improve the answer:
+- Make it well-structured
+- Use clear Markdown (headings, bullets)
+- Highlight key terms in **bold**
+- Remove repetition
+- Improve readability and flow
 
-    const text = data?.choices?.[0]?.message?.content ?? '';
-    return text.trim() || 'I do not have enough info to answer this question.';
+Do NOT:
+- Add new information
+- Change meaning
+- Hallucinate anything
+
+Return only the improved version.`,
+      },
+      {
+        role: 'user',
+        content: `Original question: ${query}\n\nDraft answer:\n${rawAnswer}\n\nPlease provide a refined, polished version of this answer.`,
+      },
+    ]);
+
+    let finalAnswer = refinedAnswer || rawAnswer || 'I do not have enough info to answer this question.';
+
+    // Sanitization step: Strip any leaked RAG metadata like "[Video: id | Chunks: N]"
+    finalAnswer = finalAnswer
+      .replace(/\[\s*(Video|Chunks|Namespace)[^\]]*\]/gi, '')
+      .trim();
+
+    return finalAnswer;
   } catch (error) {
-    console.error('Error generating answer:', error?.message || error);
+    logger.error({ err: error?.message }, 'Error generating answer');
     return 'There was an error generating an answer. Please try again later.';
   }
 }
