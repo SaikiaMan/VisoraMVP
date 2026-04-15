@@ -1,0 +1,9 @@
+node_modules
+.git
+.env
+.env.local
+*.log
+push_error.txt
+push_error_utf8.txt
+test-query.js
+yarn.lock

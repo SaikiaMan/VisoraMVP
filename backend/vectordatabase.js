@@ -1,3 +1,5 @@
+import logger from './logger.js';
+
 const namespaceChunks = new Map();
 
 const normalizeText = (value) =>
@@ -46,7 +48,7 @@ async function checkIndexExists() {
 }
 
 async function createIndex() {
-  console.log('Using in-memory retrieval. No external vector index is required.');
+  logger.info('Using in-memory retrieval. No external vector index is required.');
 }
 
 async function hasStoredChunks(namespace) {
@@ -73,7 +75,7 @@ async function describeIndexStats() {
 async function storeEmbeddings(embeddingsDataArr, namespace) {
   try {
     if (!Array.isArray(embeddingsDataArr) || embeddingsDataArr.length === 0) {
-      console.warn('No embeddings to store (received empty array). Skipping upsert.');
+      logger.warn('No embeddings to store (received empty array). Skipping upsert.');
       return;
     }
 
@@ -92,9 +94,9 @@ async function storeEmbeddings(embeddingsDataArr, namespace) {
       .filter(Boolean);
 
     namespaceChunks.set(namespace, chunks);
-    console.log('Chunks stored successfully (in-memory)');
+    logger.info('Chunks stored successfully (in-memory)');
   } catch (error) {
-    console.error('Error storing chunks:', error);
+    logger.error({ err: error }, 'Error storing chunks');
   }
 }
 
@@ -129,7 +131,7 @@ async function retrieveRelevantChunks(query, namespace) {
 
     return ranked;
   } catch (error) {
-    console.error('Error retrieving relevant chunks:', error);
+    logger.error({ err: error }, 'Error retrieving relevant chunks');
     throw error;
   }
 }
