@@ -9,7 +9,6 @@ const chatLog = document.getElementById('chatLog');
 const askForm = document.getElementById('askForm');
 const askBtn = document.getElementById('askBtn');
 const questionInput = document.getElementById('questionInput');
-const startLearningButtons = document.querySelectorAll('[data-start-learning]');
 const learningWorkspace = document.getElementById('learningWorkspace');
 
 let activeVideoUrl = defaultVideoUrl;
@@ -171,18 +170,8 @@ askForm.addEventListener('submit', async (event) => {
   }
 });
 
-startLearningButtons.forEach((button) => {
-  button.addEventListener('click', () => {
-    learningWorkspace?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setTimeout(() => {
-      if (sourceInputSection && sourceInputSection.style.display !== 'none') {
-        videoUrlInput?.focus({ preventScroll: true });
-      } else {
-        questionInput?.focus({ preventScroll: true });
-      }
-    }, 450);
-  });
-});
+  // Start Learning button handlers are in index.html
+  
   // videoUrlInput.value = defaultVideoUrl;
   // initVideo(defaultVideoUrl);
 

@@ -9,11 +9,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/how-it-works.css" />
+    <link rel="stylesheet" href="/landing-sections.css" />
   </head>
   <body>
     <header class="navbar">
       <div class="brand">Visora</div>
       <div class="navbar-actions">
+        <button class="nav-link" type="button" onclick="document.getElementById('how-it-works').scrollIntoView({ behavior: 'smooth' })">How It Works</button>
+        <button class="nav-link" type="button" onclick="document.getElementById('features').scrollIntoView({ behavior: 'smooth' })">Features</button>
         <button class="nav-cta secondary-btn" type="button" id="signupBtn" style="display: none;">Sign Up</button>
         <button class="nav-cta danger-btn" type="button" id="logoutBtn" style="display: none;">Logout</button>
         <button class="nav-cta" type="button" data-start-learning>Start Learning</button>
@@ -77,7 +81,7 @@
           Learn from videos without pausing your flow.
         </p>
         <div class="cta-wrap">
-            <button id="startLearningBtn" class="primary-btn" type="button" data-start-learning>
+            <button class="primary-btn" type="button" data-start-learning>
               Start Learning
             </button>
         </div>
@@ -86,217 +90,566 @@
 
     <main class="page">
 
-      <section class="epoch-section">
-        <div class="epoch-container">
-          <!-- Left Card -->
-          <div class="epoch-card">
-            <div class="epoch-card-content">
-              <h2 class="epoch-card-title">When intelligence reaches out<br>to instinct, the future takes shape</h2>
-              <p class="epoch-card-sub">
-                an unlikely alliance - where human intuition<br>
-                and algorithmic precision move as one
-              </p>
-              
-              <div class="epoch-cta-wrapper">
-                <div class="epoch-dot"></div>
-                <button class="epoch-cta">See it in action &rarr;</button>
-              </div>
+      <!-- Social Proof Section -->
+      <section id="social-proof" class="social-proof-section">
+        <div class="social-proof-container">
+          <div class="proof-header">
+            <h2>Trusted by Thousands of Students</h2>
+            <p>Real results from real learners. See why students love Visora.</p>
+          </div>
 
-              <div class="epoch-illustration">
-                <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop" class="epoch-img" alt="3D abstract pixelated connection" loading="lazy">
-                <div class="epoch-purple-dot"></div>
-              </div>
-
-              <div class="epoch-icon-row">
-                <span class="material-symbols-outlined epoch-icon">grid_view</span>
-                <span class="material-symbols-outlined epoch-icon">schema</span>
-                <span class="material-symbols-outlined epoch-icon">scatter_plot</span>
-                <span class="material-symbols-outlined epoch-icon">bubble_chart</span>
-                <span class="material-symbols-outlined epoch-icon">check_circle</span>
-              </div>
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-number">50K+</div>
+              <div class="metric-label">Active Students</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-number">2.5M+</div>
+              <div class="metric-label">Notes Generated</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-number">1M+</div>
+              <div class="metric-label">Quizzes Taken</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-number">4.9★</div>
+              <div class="metric-label">Average Rating</div>
             </div>
           </div>
 
-          <!-- Right Section -->
-          <div class="epoch-info">
-            <h2 class="epoch-info-title">
-              Architecture of the <span class="epoch-highlight">Next Epoch</span>
-            </h2>
-            <p class="epoch-info-sub">
-              Visora isn't just an AI; it's a bridge. We've synthesized the raw processing capability of silicon with the fluid, non-linear problem-solving of the human mind.
-            </p>
-
-            <div class="epoch-stats">
-              <div class="epoch-stat">
-                <div class="stat-value">0.02ms</div>
-                <div class="stat-line"></div>
-                <div class="stat-label">SYNC LATENCY</div>
-              </div>
-              <div class="epoch-stat">
-                <div class="stat-value">99.9%</div>
-                <div class="stat-line"></div>
-                <div class="stat-label">NEURAL ACCURACY</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="bento-grid">
-        <article class="bento-card">
-          <span class="material-symbols-outlined icon">psychology</span>
-          <h3>AI Doubt Solver</h3>
-          <p>Ask instant questions while watching and get context-aware answers from the Neural Core.</p>
-        </article>
-        <article class="bento-card">
-          <span class="material-symbols-outlined icon">auto_awesome</span>
-          <h3>AI Generated Notes</h3>
-          <p>Auto-create clear, semantic study notes from lecture transcripts instantly.</p>
-        </article>
-        <article class="bento-card">
-          <span class="material-symbols-outlined icon">schedule</span>
-          <h3>Timestamp Questions</h3>
-          <p>Jump to exact moments in the video where each concept appears.</p>
-        </article>
-        <article class="bento-card">
-          <span class="material-symbols-outlined icon">quiz</span>
-          <h3>AI Quiz Generator</h3>
-          <p>Generate topic-wise quizzes to test understanding quickly and efficiently.</p>
-        </article>
-        <article class="bento-card">
-          <span class="material-symbols-outlined icon">account_tree</span>
-          <h3>Concept Visualizer</h3>
-          <p>Break difficult topics into simple visual or structured explanations.</p>
-        </article>
-        <article class="bento-card">
-          <span class="material-symbols-outlined icon">troubleshoot</span>
-          <h3>Weak Topic Detection</h3>
-          <p>Identify weak areas from your doubts, quiz scores, and revision patterns.</p>
-        </article>
-      </section>
-
-      
-      <section id="learningWorkspace" class="workspace-section">
-        
-        <!-- INITIAL SOURCE INPUT -->
-        <div id="sourceInputSection" class="workspace-header glass-panel" style="margin: 0 auto; max-width: 600px; text-align: center; padding: 60px 40px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
-            <div class="panel-title" style="justify-content: center; margin-bottom: 20px;">
-                <span class="material-symbols-outlined title-icon" style="font-size: 40px; color: var(--accent-primary);">book_4</span>
-                <h3 style="font-size: 32px; margin: 0;">New AI Notebook</h3>
-            </div>
-            <p style="margin-bottom: 32px; color: var(--text-secondary); font-size: 18px;">Paste a YouTube link below to initialize your workspace.</p>
-            
-            <div class="input-group" style="margin-bottom: 0;">
-                <span class="material-symbols-outlined input-icon">link</span>  
-                <input id="videoUrl" type="url" placeholder="Paste YouTube link here..." style="font-size: 16px; padding: 16px 16px 16px 44px; border-radius: 8px;" />
-                <button id="loadVideoBtn" type="button" class="action-btn" style="padding: 12px 32px; font-size: 16px;">Load Source</button>
-            </div>
-        </div>
-
-        <!-- LOADED WORKSPACE -->
-        <div class="workspace-grid" id="mainWorkspace" style="display: none;">
-          <!-- Video Panel -->
-          <article class="panel video-panel glass-panel" style="display: flex; flex-direction: column;">
-            <div class="panel-top" style="margin-bottom: 16px;">
-              <div class="panel-title">
-                  <span class="material-symbols-outlined title-icon">smart_display</span>
-                  <h3>Source Video</h3>
-              </div>
-              <span id="videoStatus" class="status-chip">Ready</span>
-            </div>
-
-            <div class="video-container" style="flex: 1; min-height: 400px; border-radius: 8px; overflow: hidden;">
-              <iframe
-                id="videoFrame"
-                title="Lesson Video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowfullscreen
-                style="width: 100%; height: 100%; border: none;"
-              ></iframe>
-            </div>
-          </article>
-
-          <!-- Notebook Studio Panel -->
-          <aside class="panel chat-panel glass-panel" style="display: flex; flex-direction: column;">
-            <div class="panel-top" style="margin-bottom: 16px;">
-                <div class="panel-title">
-                    <span class="material-symbols-outlined title-icon">neurology</span>
-                    <h3>Notebook Studio</h3>
+          <div class="testimonials-slider">
+            <div class="testimonial-card">
+              <p class="testimonial-quote">"I went from struggling with physics to getting top marks. Visora made difficult concepts so simple!"</p>
+              <div class="testimonial-author">
+                <div class="author-avatar">A</div>
+                <div class="author-info">
+                  <h4>Arjun Sharma</h4>
+                  <p>JEE Aspirant</p>
                 </div>
-                <span id="chatStatus" class="status-chip pulse">Online</span>
-            </div>
-
-            <!-- Tabs -->
-            <div class="feature-tabs" style="display: flex; gap: 8px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); overflow-x: auto; scrollbar-width: none;">
-              <button class="tab-btn active" data-tab="doubt" style="background: var(--surface-light); border: 1px solid rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 20px; color: white; cursor: pointer; white-space: nowrap; outline: none;">AI Doubt Solver</button>
-              <button class="tab-btn" data-tab="notes" style="background: transparent; border: 1px solid transparent; padding: 8px 16px; border-radius: 20px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: 0.2s; outline: none;">Notes Generator</button>
-              <button class="tab-btn" data-tab="quiz" style="background: transparent; border: 1px solid transparent; padding: 8px 16px; border-radius: 20px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: 0.2s; outline: none;">AI Quiz</button>
-              <button class="tab-btn" data-tab="weak" style="background: transparent; border: 1px solid transparent; padding: 8px 16px; border-radius: 20px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: 0.2s; outline: none;">Weak Topics</button>
-            </div>
-
-            <!-- Tab Content: Doubt Solver -->
-            <div id="tab-doubt" class="tab-content" style="display: flex; flex-direction: column; flex: 1;">
-              <div id="chatLog" class="chat-log" aria-live="polite" style="flex: 1; min-height: 300px; max-height: 400px; overflow-y: auto;">
-                  <!-- Messages will appear here -->
               </div>
-              <form id="askForm" class="ask-form relative" style="margin-top: 16px;">
-                <textarea id="questionInput" rows="2" placeholder="Ask anything about the video..." required></textarea>
-                <button id="askBtn" type="submit" class="send-btn">
-                    <span class="material-symbols-outlined">send</span>
-                </button>
-              </form>
             </div>
 
-            <!-- Tab Content: Notes -->
-            <div id="tab-notes" class="tab-content" style="display: none; align-items: center; justify-content: center; flex: 1; text-align: center; flex-direction: column; min-height: 300px; max-height: 480px; overflow-y: auto; padding: 16px;">
-               <div id="notesPlaceholder">
-                 <span class="material-symbols-outlined icon" style="font-size: 48px; color: var(--text-muted); margin-bottom: 16px;">auto_awesome</span>
-                 <h3 style="margin-bottom: 8px;">Auto-generated Notes</h3>
-                 <p style="color: var(--text-secondary); margin-bottom: 24px; max-width: 80%; margin-left: auto; margin-right: auto;">Generate detailed, structured study notes directly from this video.</p>
-                 <button id="generateNotesBtn" class="action-btn">Generate Notes</button>
-               </div>
-               
-               <div id="notesContainer" style="display: none; width: 100%; text-align: left; line-height: 1.6; font-size: 15px;"></div>
+            <div class="testimonial-card">
+              <p class="testimonial-quote">"Instead of spending hours taking notes, I get them in seconds. It's a game-changer for my study routine."</p>
+              <div class="testimonial-author">
+                <div class="author-avatar">S</div>
+                <div class="author-info">
+                  <h4>Sarah Patel</h4>
+                  <p>College Student</p>
+                </div>
+              </div>
             </div>
 
-            <!-- Tab Content: Quiz -->
-            <div id="tab-quiz" class="tab-content" style="display: none; align-items: center; justify-content: center; flex: 1; text-align: center; flex-direction: column; min-height: 300px;">
-               <span class="material-symbols-outlined icon" style="font-size: 48px; color: var(--text-muted); margin-bottom: 16px;">quiz</span>
-               <h3 style="margin-bottom: 8px;">AI Quiz Generator</h3>
-               <p style="color: var(--text-secondary); margin-bottom: 24px; max-width: 80%;">Test your knowledge on the core concepts covered so far.</p>
-               <button id="generateQuizBtn" class="action-btn">Start Quiz</button>
-               <div id="quizContainer" style="display: none; width: 100%; text-align: left; padding: 16px;">
-                  <form id="quizForm"></form>
-                  <button id="submitQuizBtn" class="action-btn" style="margin-top: 16px; display: none;">Submit Quiz</button>
-                  <div id="quizResults" style="margin-top: 16px; font-weight: bold; color: var(--accent-blue);"></div>
-               </div>
+            <div class="testimonial-card">
+              <p class="testimonial-quote">"The weak topic detection helped me focus on areas I actually need to improve. Saved so much time!"</p>
+              <div class="testimonial-author">
+                <div class="author-avatar">R</div>
+                <div class="author-info">
+                  <h4>Rahul Kumar</h4>
+                  <p>School Student</p>
+                </div>
+              </div>
             </div>
-
-            <!-- Tab Content: Weak Topics -->
-            <div id="tab-weak" class="tab-content" style="display: none; align-items: center; justify-content: center; flex: 1; text-align: center; flex-direction: column; min-height: 300px;">
-               <span id="weakPlaceholderIcon" class="material-symbols-outlined icon" style="font-size: 48px; color: var(--text-muted); margin-bottom: 16px;">troubleshoot</span>
-               <h3 id="weakPlaceholderTitle" style="margin-bottom: 8px;">Weak Topic Detection</h3>
-               <p id="weakPlaceholderDesc" style="color: var(--text-secondary); margin-bottom: 24px; max-width: 80%;">Analyze your interactions to discover areas that need more focus.</p>
-               <button id="analyzeWeakbtn" class="action-btn">Analyze Weak Topics</button>
-               <div id="weakTopicsContainer" style="display: none; width: 100%; text-align: left; line-height: 1.6; font-size: 15px; margin-top: 16px;"></div>
-            </div>
-          </aside>
+          </div>
         </div>
       </section>
 
-      <section class="philosophy-section">
-        <div class="philosophy-container">
-          <div class="phil-label">THE PHILOSOPHY OF INTEGRATION</div>
-          <h2 class="phil-quote">
-            'The greatest breakthroughs occur not when we replace humans with machines, but when we <span class="phil-underline-wrap"><span class="phil-text">amplify human intent</span><span class="phil-underline"></span></span> through the lens of <span style="white-space: nowrap;"><span class="phil-underline-wrap"><span class="phil-text">algorithmic perfection</span><span class="phil-underline"></span></span>.'</span>
-          </h2>
-          <div class="phil-divider"></div>
-          <p class="phil-subtext">
-            We call this the 'Active Alliance'. A state of flow where the boundary between tool and creator dissolves, enabling feats of engineering and design previously thought impossible.
-          </p>
+      <!-- Use Cases Section -->
+      <section id="use-cases" class="use-cases-section">
+        <div class="use-cases-container">
+          <div class="use-cases-header">
+            <h2>Designed for Every Learner</h2>
+            <p>Whether you're a school student, college student, or competitive exam aspirant, Visora adapts to your needs.</p>
+          </div>
+
+          <div class="use-cases-grid">
+            <div class="use-case-card">
+              <span class="material-symbols-outlined use-case-icon">school</span>
+              <h3>School Students</h3>
+              <p>Master your syllabus faster. Get instant help with tough concepts, create practice tests, and track progress effortlessly.</p>
+              <div class="use-case-tags">
+                <span class="use-case-tag">Instant Help</span>
+                <span class="use-case-tag">Quick Revision</span>
+              </div>
+            </div>
+
+            <div class="use-case-card">
+              <span class="material-symbols-outlined use-case-icon">school</span>
+              <h3>College Students</h3>
+              <p>Balance multiple subjects with AI-powered summaries. Focus on understanding rather than endless note-taking.</p>
+              <div class="use-case-tags">
+                <span class="use-case-tag">Smart Notes</span>
+                <span class="use-case-tag">Quiz Practice</span>
+              </div>
+            </div>
+
+            <div class="use-case-card">
+              <span class="material-symbols-outlined use-case-icon">emoji_events</span>
+              <h3>Competitive Exam Aspirants</h3>
+              <p>Accelerate your exam prep with AI coaching. Identify weak areas, practice smartly, and improve scores faster.</p>
+              <div class="use-case-tags">
+                <span class="use-case-tag">Smart Practice</span>
+                <span class="use-case-tag">Gap Analysis</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
+
+      <!-- Problem → Solution Section -->
+      <section id="problem-solution" class="problem-solution-section">
+        <div class="problem-solution-container">
+          <div class="problem-solution-header">
+            <h2>We Solve Your Learning Challenges</h2>
+          </div>
+
+          <div class="problem-solution-grid">
+            <div class="problem-solution-item">
+              <div class="problem-box">
+                <h4>❌ Can't understand lectures</h4>
+                <p>Concepts are unclear even after multiple watches</p>
+              </div>
+              <div style="text-align: center; margin: -20px 0;">
+                <span class="material-symbols-outlined" style="color: var(--accent-primary); font-size: 28px;">arrow_downward</span>
+              </div>
+              <div class="solution-box">
+                <h4>✅ Instant AI Explanations</h4>
+                <p>Ask doubts anytime and get clear, structured answers with examples</p>
+              </div>
+            </div>
+
+            <div class="problem-solution-item">
+              <div class="problem-box">
+                <h4>❌ Too much syllabus</h4>
+                <p>Can't cover everything efficiently in limited time</p>
+              </div>
+              <div style="text-align: center; margin: -20px 0;">
+                <span class="material-symbols-outlined" style="color: var(--accent-primary); font-size: 28px;">arrow_downward</span>
+              </div>
+              <div class="solution-box">
+                <h4>✅ AI-Generated Notes</h4>
+                <p>Get concise, actionable notes automatically from any lecture</p>
+              </div>
+            </div>
+
+            <div class="problem-solution-item">
+              <div class="problem-box">
+                <h4>❌ Weak subjects not identified</h4>
+                <p>Don't know which topics need more focus</p>
+              </div>
+              <div style="text-align: center; margin: -20px 0;">
+                <span class="material-symbols-outlined" style="color: var(--accent-primary); font-size: 28px;">arrow_downward</span>
+              </div>
+              <div class="solution-box">
+                <h4>✅ Smart Gap Detection</h4>
+                <p>AI identifies weak areas from your doubts and quiz performance</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Interactive Demo Preview Section -->
+      <section id="demo-preview" class="demo-preview-section">
+        <div class="demo-preview-container">
+          <div class="demo-header">
+            <h2>See Visora in Action</h2>
+            <p>Experience how AI transforms the way you learn</p>
+          </div>
+
+          <div class="demo-content">
+            <div class="demo-chat">
+              <div class="chat-messages">
+                <div class="chat-message user" style="animation-delay: 0.2s;">
+                  <div class="chat-bubble">What is photosynthesis?</div>
+                </div>
+                <div class="chat-message ai" style="animation-delay: 0.4s;">
+                  <div class="chat-bubble">Photosynthesis is the process by which plants convert light energy into chemical energy. It occurs in two main stages: Light reactions in the thylakoid and Calvin cycle in the stroma...</div>
+                </div>
+                <div class="chat-message user" style="animation-delay: 0.6s;">
+                  <div class="chat-bubble">Can you explain the light reaction?</div>
+                </div>
+                <div class="chat-message ai" style="animation-delay: 0.8s;">
+                  <div class="chat-bubble">Light reactions convert photon energy into ATP and NADPH. Water is split, releasing oxygen as a byproduct. These molecules power the Calvin cycle...</div>
+                </div>
+              </div>
+              <div class="chat-input">
+                <input type="text" placeholder="Ask your doubt..." disabled />
+                <button disabled>Send</button>
+              </div>
+            </div>
+
+            <div class="demo-features">
+              <div class="demo-feature-card">
+                <span class="material-symbols-outlined demo-feature-icon">auto_awesome</span>
+                <h4>Generate Notes</h4>
+                <p>Turn lecture transcripts into structured notes instantly</p>
+              </div>
+              <div class="demo-feature-card">
+                <span class="material-symbols-outlined demo-feature-icon">quiz</span>
+                <h4>Create Quizzes</h4>
+                <p>Auto-generate practice questions to test understanding</p>
+              </div>
+              <div class="demo-feature-card">
+                <span class="material-symbols-outlined demo-feature-icon">psychology</span>
+                <h4>Doubt Solver</h4>
+                <p>Get context-aware answers to any question instantly</p>
+              </div>
+              <div class="demo-feature-card">
+                <span class="material-symbols-outlined demo-feature-icon">insights</span>
+                <h4>Track Progress</h4>
+                <p>Identify weak topics and optimize your learning path</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Workflow Preview Section -->
+      <section id="workflow" class="workflow-section">
+        <div class="workflow-container">
+          <div class="workflow-header">
+            <h2>Your Learning Journey</h2>
+            <p>Four simple steps to smarter learning</p>
+          </div>
+
+          <div class="workflow-steps">
+            <div class="workflow-step">
+              <div class="workflow-step-number">1</div>
+              <h3>Paste Video</h3>
+              <p>Share any YouTube lecture link in seconds</p>
+            </div>
+            <div class="workflow-step">
+              <div class="workflow-step-number">2</div>
+              <h3>Ask & Learn</h3>
+              <p>Get instant AI-powered answers to your doubts</p>
+            </div>
+            <div class="workflow-step">
+              <div class="workflow-step-number">3</div>
+              <h3>Generate Notes & Quiz</h3>
+              <p>Create notes and practice quizzes automatically</p>
+            </div>
+            <div class="workflow-step">
+              <div class="workflow-step-number">4</div>
+              <h3>Track & Improve</h3>
+              <p>Identify weak areas and focus your efforts smartly</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Personalization / AI Intelligence Section -->
+      <section id="personalization" class="personalization-section">
+        <div class="personalization-container">
+          <div class="personalization-header">
+            <h2>AI That Understands Your Learning Style</h2>
+            <p>Visora adapts to you, not the other way around. The more you learn, the smarter it gets.</p>
+          </div>
+
+          <div class="personalization-grid">
+            <div class="personalization-item">
+              <span class="material-symbols-outlined personalization-icon">psychology</span>
+              <h3>Smart Recommendations</h3>
+              <p>Get personalized study suggestions based on your weak topics and learning pace.</p>
+            </div>
+            <div class="personalization-item">
+              <span class="material-symbols-outlined personalization-icon">trending_up</span>
+              <h3>Learning Analytics</h3>
+              <p>Track your progress with detailed insights on comprehension and retention.</p>
+            </div>
+            <div class="personalization-item">
+              <span class="material-symbols-outlined personalization-icon">auto_fix_high</span>
+              <h3>Adaptive Learning Path</h3>
+              <p>Our AI creates a customized study plan that evolves with your performance.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Comparison Section -->
+      <section id="comparison" class="comparison-section">
+        <div class="comparison-container">
+          <div class="comparison-header">
+            <h2>Traditional Study vs AI-Powered Study</h2>
+          </div>
+
+          <div class="comparison-cards">
+            <div class="comparison-card traditional">
+              <h3>Traditional Study</h3>
+              <div class="comparison-list">
+                <div class="comparison-item">
+                  <span class="material-symbols-outlined icon">close</span>
+                  <p>Hours of note-taking by hand</p>
+                </div>
+                <div class="comparison-item">
+                  <span class="material-symbols-outlined icon">close</span>
+                  <p>Unclear concepts go unresolved</p>
+                </div>
+                <div class="comparison-item">
+                  <span class="material-symbols-outlined icon">close</span>
+                  <p>Manual quiz creation</p>
+                </div>
+                <div class="comparison-item">
+                  <span class="material-symbols-outlined icon">close</span>
+                  <p>No insight into weak areas</p>
+                </div>
+                <div class="comparison-item">
+                  <span class="material-symbols-outlined icon">close</span>
+                  <p>Time-consuming revision</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="comparison-card ai-powered">
+              <h3>✨ Visora AI Study</h3>
+              <div class="comparison-list">
+                <div class="comparison-item">
+                  <span class="material-symbols-outlined icon">done</span>
+                  <p>AI generates notes in seconds</p>
+                </div>
+                <div class="comparison-item">
+                  <span class="material-symbols-outlined icon">done</span>
+                  <p>Instant AI answers to all doubts</p>
+                </div>
+                <div class="comparison-item">
+                  <span class="material-symbols-outlined icon">done</span>
+                  <p>Auto-generate practice quizzes</p>
+                </div>
+                <div class="comparison-item">
+                  <span class="material-symbols-outlined icon">done</span>
+                  <p>Smart detection of weak topics</p>
+                </div>
+                <div class="comparison-item">
+                  <span class="material-symbols-outlined icon">done</span>
+                  <p>Efficient, focused learning</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mid-page CTA Section -->
+      <section id="mid-cta" class="mid-cta-section">
+        <div class="mid-cta-container">
+          <h2>Ready to Transform Your Learning?</h2>
+          <p>Join thousands of students already using Visora to learn smarter.</p>
+          <div class="cta-buttons">
+            <button class="cta-button primary" type="button" data-start-learning>Start Learning for Free</button>
+            <button class="cta-button secondary" type="button" onclick="document.getElementById('demo-preview').scrollIntoView({ behavior: 'smooth' })">See Demo First</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- How It Works Section -->
+      <section id="how-it-works" class="how-it-works-section">
+        <div class="how-it-works-container">
+          <div class="section-header">
+            <span class="section-label">HOW IT WORKS</span>
+            <h2>Learn Smarter, Not Harder</h2>
+            <p>Three simple steps to transform your learning experience</p>
+          </div>
+
+          <div class="steps-grid">
+            <div class="step-card">
+              <div class="step-number">1</div>
+              <h3>Paste Your Video</h3>
+              <p>Share any YouTube lecture or tutorial link to get started instantly.</p>
+              <span class="material-symbols-outlined step-icon">link</span>
+            </div>
+            <div class="step-card">
+              <div class="step-number">2</div>
+              <h3>Ask Questions</h3>
+              <p>Ask any doubt while watching and get AI-powered answers instantly without pausing.</p>
+              <span class="material-symbols-outlined step-icon">chat</span>
+            </div>
+            <div class="step-card">
+              <div class="step-number">3</div>
+              <h3>Generate & Test</h3>
+              <p>Auto-generate notes, quizzes, and identify weak areas in seconds.</p>
+              <span class="material-symbols-outlined step-icon">auto_awesome</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section id="features" class="features-section">
+        <div class="features-header">
+          <span class="section-label">POWERFUL FEATURES</span>
+          <h2>Everything You Need to Master Any Subject</h2>
+          <p>Comprehensive AI tools designed to enhance your learning experience</p>
+        </div>
+
+        <div class="bento-grid">
+          <article class="bento-card">
+            <span class="material-symbols-outlined icon">psychology</span>
+            <h3>AI Doubt Solver</h3>
+            <p>Ask instant questions while watching and get context-aware answers from the Neural Core.</p>
+          </article>
+          <article class="bento-card">
+            <span class="material-symbols-outlined icon">auto_awesome</span>
+            <h3>AI Generated Notes</h3>
+            <p>Auto-create clear, semantic study notes from lecture transcripts instantly.</p>
+          </article>
+          <article class="bento-card">
+            <span class="material-symbols-outlined icon">schedule</span>
+            <h3>Timestamp Questions</h3>
+            <p>Jump to exact moments in the video where each concept appears.</p>
+          </article>
+          <article class="bento-card">
+            <span class="material-symbols-outlined icon">quiz</span>
+            <h3>AI Quiz Generator</h3>
+            <p>Generate topic-wise quizzes to test understanding quickly and efficiently.</p>
+          </article>
+          <article class="bento-card">
+            <span class="material-symbols-outlined icon">account_tree</span>
+            <h3>Concept Visualizer</h3>
+            <p>Break difficult topics into simple visual or structured explanations.</p>
+          </article>
+          <article class="bento-card">
+            <span class="material-symbols-outlined icon">troubleshoot</span>
+            <h3>Weak Topic Detection</h3>
+            <p>Identify weak areas from your doubts, quiz scores, and revision patterns.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- FAQ Section -->
+      <section id="faq" class="faq-section">
+        <div class="faq-container">
+          <div class="faq-header">
+            <h2>Frequently Asked Questions</h2>
+            <p>Everything you need to know about Visora</p>
+          </div>
+
+          <div class="faq-list">
+            <div class="faq-item">
+              <div class="faq-question">
+                <h3>Is Visora free to use?</h3>
+                <span class="material-symbols-outlined faq-toggle">expand_more</span>
+              </div>
+              <div class="faq-answer">
+                Yes! Visora offers a free tier that includes core features like AI doubt solving, note generation, and quiz creation. Premium features and unlimited access are available with a paid subscription.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-question">
+                <h3>Which subjects and topics are supported?</h3>
+                <span class="material-symbols-outlined faq-toggle">expand_more</span>
+              </div>
+              <div class="faq-answer">
+                Visora supports a wide range of subjects including Science, Mathematics, History, English, Economics, and more. We continuously expand our subject library. Any YouTube lecture across subjects can be used with Visora.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-question">
+                <h3>How accurate is the AI?</h3>
+                <span class="material-symbols-outlined faq-toggle">expand_more</span>
+              </div>
+              <div class="faq-answer">
+                Our AI has been trained on quality educational content and is designed specifically for learning. Accuracy improves as you use it more—the system learns from your feedback and interaction patterns.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-question">
+                <h3>Can I use videos other than YouTube?</h3>
+                <span class="material-symbols-outlined faq-toggle">expand_more</span>
+              </div>
+              <div class="faq-answer">
+                Currently, Visora works best with YouTube videos. We're working on expanding support for other video platforms and direct uploads.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-question">
+                <h3>How do I track my progress?</h3>
+                <span class="material-symbols-outlined faq-toggle">expand_more</span>
+              </div>
+              <div class="faq-answer">
+                Your learning dashboard shows detailed analytics including quiz performance, weak topics, study time, and progress over time. All your data is saved and accessible anytime.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-question">
+                <h3>Is my data private and secure?</h3>
+                <span class="material-symbols-outlined faq-toggle">expand_more</span>
+              </div>
+              <div class="faq-answer">
+                Yes. We use industry-standard encryption and security practices. Your data is private and never shared with third parties. You have full control over your account and data.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-container">
+        <div class="footer-content">
+          <div class="footer-section">
+            <h3>Product</h3>
+            <ul>
+              <li><a href="#how-it-works">How It Works</a></li>
+              <li><a href="#features">Features</a></li>
+              <li><a href="#use-cases">For Students</a></li>
+              <li><a href="#pricing">Pricing</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h3>Resources</h3>
+            <ul>
+              <li><a href="#">Blog</a></li>
+              <li><a href="#">Tutorials</a></li>
+              <li><a href="#">Documentation</a></li>
+              <li><a href="#">Community</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h3>Company</h3>
+            <ul>
+              <li><a href="#">About Us</a></li>
+              <li><a href="#">Contact</a></li>
+              <li><a href="#">Careers</a></li>
+              <li><a href="#">Press</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h3>Legal</h3>
+            <ul>
+              <li><a href="#">Privacy Policy</a></li>
+              <li><a href="#">Terms of Service</a></li>
+              <li><a href="#">Cookie Policy</a></li>
+              <li><a href="#">Accessibility</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <p class="footer-copyright">© 2024 Visora. All rights reserved. Helping students learn smarter, not harder.</p>
+          <div class="footer-socials">
+            <a href="#" class="footer-social-link" title="Twitter">
+              <span class="material-symbols-outlined">language</span>
+            </a>
+            <a href="#" class="footer-social-link" title="Discord">
+              <span class="material-symbols-outlined">chat</span>
+            </a>
+            <a href="#" class="footer-social-link" title="LinkedIn">
+              <span class="material-symbols-outlined">share</span>
+            </a>
+            <a href="#" class="footer-social-link" title="Instagram">
+              <span class="material-symbols-outlined">image</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
 
     <!-- Global Pulse Decoration for dark theme -->
     <div class="glow-bg"></div>
@@ -502,6 +855,12 @@
             // Reset form
             signupFormElement.reset();
             signupMessage.textContent = '';
+            
+            // Check if user wanted to go to learn page
+            if (sessionStorage.getItem('redirectToLearn') === 'true') {
+              sessionStorage.removeItem('redirectToLearn');
+              window.location.href = '/learn.html';
+            }
           }, 1500);
         } else {
           signupMessage.textContent = '❌ ' + result.error;
@@ -532,6 +891,12 @@
             // Reset form
             loginFormElement.reset();
             loginMessage.textContent = '';
+            
+            // Check if user wanted to go to learn page
+            if (sessionStorage.getItem('redirectToLearn') === 'true') {
+              sessionStorage.removeItem('redirectToLearn');
+              window.location.href = '/learn.html';
+            }
           }, 1500);
         } else {
           loginMessage.textContent = '❌ ' + result.error;
@@ -541,4 +906,67 @@
 
       // Initialize auth UI on page load
       initializeAuthUI();
+
+      // Handle "Start Learning" buttons
+      const startLearningButtons = document.querySelectorAll('[data-start-learning]');
+      console.log('Start Learning buttons found:', startLearningButtons.length);
+      
+      startLearningButtons.forEach((button) => {
+        button.addEventListener('click', async (e) => {
+          e.preventDefault();
+          console.log('Start Learning clicked');
+          
+          try {
+            const user = await getCurrentUser();
+            console.log('User check result:', user);
+            
+            if (user) {
+              // User is authenticated
+              console.log('User authenticated, redirecting to learn');
+              window.location.href = '/learn.html';
+            } else {
+              // User not authenticated, show signup form
+              console.log('User not authenticated, showing signup form');
+              sessionStorage.setItem('redirectToLearn', 'true');
+              
+              // Show modal and signup form
+              showModal();
+              choiceScreen.classList.remove('active');
+              signupForm.classList.add('active');
+              
+              console.log('Signup form should now be visible');
+            }
+          } catch (error) {
+            console.error('Error in start learning click:', error);
+            // Show signup form on error too
+            sessionStorage.setItem('redirectToLearn', 'true');
+            showModal();
+            choiceScreen.classList.remove('active');
+            signupForm.classList.add('active');
+          }
+        });
+      });
+
+      // FAQ Toggle Functionality
+      const faqItems = document.querySelectorAll('.faq-item');
+      faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+        question.addEventListener('click', () => {
+          const isActive = item.classList.contains('active');
+          
+          // Close all other items
+          faqItems.forEach(otherItem => {
+            if (otherItem !== item) {
+              otherItem.classList.remove('active');
+            }
+          });
+          
+          // Toggle current item
+          if (isActive) {
+            item.classList.remove('active');
+          } else {
+            item.classList.add('active');
+          }
+        });
+      });
     </script>

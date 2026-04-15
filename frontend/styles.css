@@ -1,16 +1,16 @@
 :root {
-  --bg-main: #0e0e0f;
-  --bg-surface: #131314;
-  --bg-surface-elevated: #262627;
-  --bg-glass: rgba(19, 19, 20, 0.6);
-  --accent-primary: #b6a0ff;
-  --accent-secondary: #8b5cf6;
-  --accent-glow: rgba(182, 160, 255, 0.2);
-  --text-main: #ffffff;
-  --text-muted: #adaaab;
-  --border-light: rgba(255, 255, 255, 0.1);
-  --border-ghost: rgba(72, 72, 73, 0.3);
-  --shadow: 0 8px 32px rgba(182, 160, 255, 0.05);
+  --bg-main: #ffffff;
+  --bg-surface: #f8fafc;
+  --bg-surface-elevated: #f1f5f9;
+  --bg-glass: rgba(248, 250, 252, 0.8);
+  --accent-primary: #4f46e5;
+  --accent-secondary: #06b6d4;
+  --accent-glow: rgba(79, 70, 229, 0.1);
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-light: rgba(30, 41, 59, 0.1);
+  --border-ghost: rgba(100, 116, 139, 0.15);
+  --shadow: 0 8px 32px rgba(79, 70, 229, 0.08);
 }
 
 * {
@@ -22,7 +22,7 @@ body {
   min-height: 100vh;
   font-family: 'Inter', sans-serif;
   color: var(--text-main);
-  background-color: var(--bg-main);
+  background-color: #ffffff;
   overflow-x: hidden;
 }
 
@@ -48,7 +48,7 @@ h1, h2, h3, .brand, .kicker, button {
   top: 0;
   width: 100%;
   height: 70px;
-  background: rgba(14, 14, 15, 0.8);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);
   display: flex;
   justify-content: space-between;
@@ -56,7 +56,7 @@ h1, h2, h3, .brand, .kicker, button {
   padding: 0 32px;
   border-bottom: 1px solid var(--border-light);
   z-index: 50;
-  box-shadow: var(--shadow);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .navbar-actions {
@@ -70,6 +70,10 @@ h1, h2, h3, .brand, .kicker, button {
   font-weight: 700;
   color: var(--accent-primary);
   letter-spacing: -0.05em;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 button {
@@ -79,15 +83,17 @@ button {
 }
 
 .nav-cta {
-  background: var(--bg-surface-elevated);
+  background: transparent;
   color: var(--text-main);
   padding: 8px 16px;
   border-radius: 8px;
   font-weight: 600;
   font-size: 14px;
-  border: 1px solid var(--border-ghost);
+  border: 1px solid var(--border-light);
+  transition: all 0.2s ease;
 }
 .nav-cta:hover {
+  background: var(--bg-surface);
   color: var(--accent-primary);
   border-color: var(--accent-primary);
 }
@@ -100,25 +106,43 @@ button {
   font-weight: 600;
   font-size: 14px;
   border: 1px solid var(--accent-primary);
+  transition: all 0.2s ease;
 }
 .secondary-btn:hover {
-  background: rgba(182, 160, 255, 0.1);
+  background: rgba(79, 70, 229, 0.08);
   color: var(--accent-primary);
 }
 
 .danger-btn {
   background: transparent;
-  color: #ff6b6b;
+  color: #ef4444;
   padding: 8px 16px;
   border-radius: 8px;
   font-weight: 600;
   font-size: 14px;
-  border: 1px solid #ff6b6b;
+  border: 1px solid #ef4444;
+  transition: all 0.2s ease;
 }
 .danger-btn:hover {
-  background: rgba(255, 107, 107, 0.1);
-  color: #ff5252;
-  border-color: #ff5252;
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+.nav-link {
+  background: transparent;
+  color: var(--text-main);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.nav-link:hover {
+  color: var(--accent-primary);
+  background: rgba(79, 70, 229, 0.05);
 }
 
 /* Coded Full-Width Hero Section */
@@ -132,8 +156,8 @@ button {
   position: relative;
   overflow: hidden;
   background: 
-    radial-gradient(circle at center, rgba(160,132,255,0.15) 0%, rgba(10,9,13,0.9) 60%),
-    linear-gradient(to bottom, #0A090D, #0A090D);
+    radial-gradient(circle at center, rgba(79, 70, 229, 0.08) 0%, rgba(255, 255, 255, 0.5) 60%),
+    linear-gradient(135deg, #ffffff 0%, #f0f4ff 100%);
   padding-top: 80px;
   margin: 0;
 }
@@ -142,7 +166,7 @@ button {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle, rgba(160,132,255,0.2), transparent 70%);
+  background: radial-gradient(circle, rgba(79, 70, 229, 0.06), transparent 70%);
   filter: blur(120px);
   z-index: 0;
   pointer-events: none;
@@ -165,7 +189,7 @@ button {
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at center, transparent 0%, rgba(10,9,13,0.85) 100%);
+  background: radial-gradient(circle at center, rgba(10,9,13,0.95) 0%, rgba(10,9,13,0.98) 100%);
   z-index: 1;
   pointer-events: none;
 }
@@ -207,8 +231,8 @@ button {
   left: 50%;
   width: 32px;
   height: 180px;
-  background: linear-gradient(135deg, #eee 0%, #888 40%, #fff 100%);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.4) inset, 0 0 15px rgba(255,255,255,0.2);
+  background: linear-gradient(135deg, #555 0%, #333 40%, #666 100%);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2) inset, 0 0 15px rgba(255,255,255,0.1);
   transform-origin: center;
   border-radius: 4px;
 }
@@ -233,15 +257,18 @@ button {
 .center-glow {
   position: absolute;
   top: 50%;
+  position: absolute;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 500px;
   height: 500px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(160,132,255,0.4) 0%, transparent 70%);
-  mix-blend-mode: screen;
+  background: radial-gradient(circle, rgba(79, 70, 229, 0.1) 0%, transparent 70%);
+  mix-blend-mode: multiply;
   filter: blur(40px);
   z-index: -1;
+}
 }
 
 /* Hands */
@@ -253,7 +280,7 @@ button {
   top: 45%;
   transform: translateY(-50%);
   z-index: 0;
-  opacity: 0.35;
+  opacity: 0.15;
   mix-blend-mode: screen;
 }
 
@@ -274,6 +301,16 @@ button {
 
 .hero-content {
   max-width: 800px;
+}
+
+.hero-content h1 {
+  font-size: clamp(36px, 6vw, 64px);
+  line-height: 1.1;
+  font-weight: 700;
+  margin: 0 0 20px;
+  letter-spacing: -0.04em;
+  color: var(--text-main);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .kicker {
@@ -307,6 +344,7 @@ button {
   line-height: 1.6;
   margin: 0 auto 32px;
   max-width: 600px;
+  text-shadow: none;
 }
 
 .primary-btn {
