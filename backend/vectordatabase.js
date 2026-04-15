@@ -136,12 +136,17 @@ async function retrieveRelevantChunks(query, namespace) {
   }
 }
 
-export {
-  storeEmbeddings,
-  createIndex,
-  describeIndexStats,
-  retrieveRelevantChunks,
-  checkIndexExists,
-  hasStoredChunks,
+async function getAllChunks(namespace) {
+    return namespaceChunks.get(namespace) || [];
+  }
+
+  export {
+    storeEmbeddings,
+    createIndex,
+    describeIndexStats,
+    retrieveRelevantChunks,
+    checkIndexExists,
+    hasStoredChunks,
+    getAllChunks,
 };
 

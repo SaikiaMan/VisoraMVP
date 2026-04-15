@@ -1,43 +1,126 @@
+// Utility function to include auth token in API requests
+const fetchWithAuth = async (url, options = {}) => {
+  const token = localStorage.getItem('authToken');
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return fetch(url, { ...options, headers });
+};
+
+// Add logout functionality
+const setupLogoutButton = () => {
+  const logoutBtn = document.querySelector('[data-logout]');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('authToken');
+      window.location.href = '/';
+    });
+  }
+};
+
+// Setup sign up button (on landing page)
+const setupSignUpButton = () => {
+  const signUpBtn = document.querySelector('[data-signup]');
+  if (signUpBtn) {
+    signUpBtn.addEventListener('click', () => {
+      window.location.href = '/login';
+    });
+  }
+};
+
+// Setup "Start Learning" button - check if authenticated
+const setupStartLearningButton = () => {
+  const startLearningBtns = document.querySelectorAll('[data-start-learning]');
+  startLearningBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        // Not logged in, go to login page
+        window.location.href = '/login';
+      } else {
+        // Already logged in, scroll to learning workspace
+        const learningWorkspace = document.getElementById('learningWorkspace');
+        if (learningWorkspace) {
+          learningWorkspace.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setTimeout(() => {
+            const questionInput = document.getElementById('questionInput');
+            if (questionInput) questionInput.focus({ preventScroll: true });
+          }, 450);
+        }
+      }
+    });
+  });
+};
+
 const defaultVideoUrl = 'https://youtu.be/dAF5FngVa7A?si=W0YcpQwORJI0rApq';
 
-const videoUrlInput = document.getElementById('videoUrl');
-const loadVideoBtn = document.getElementById('loadVideoBtn');
-const videoFrame = document.getElementById('videoFrame');
-const videoStatus = document.getElementById('videoStatus');
-const chatStatus = document.getElementById('chatStatus');
-const chatLog = document.getElementById('chatLog');
-const askForm = document.getElementById('askForm');
-const askBtn = document.getElementById('askBtn');
-const questionInput = document.getElementById('questionInput');
-const startLearningButtons = document.querySelectorAll('[data-start-learning]');
-const learningWorkspace = document.getElementById('learningWorkspace');
+// Only initialize app if user is authenticated
+function initializeAppIfAuthenticated() {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    // User not authenticated, just setup button handlers
+    console.log('App: User not authenticated, skipping learning interface init');
+    setupLogoutButton();
+    setupSignUpButton();
+    setupStartLearningButton();
+    return;
+  }
+  
+  // User is authenticated, initialize the full learning app
+  console.log('App: User authenticated, initializing learning interface');
+  
+  const videoUrlInput = document.getElementById('videoUrl');
+  const loadVideoBtn = document.getElementById('loadVideoBtn');
+  const videoFrame = document.getElementById('videoFrame');
+  const videoStatus = document.getElementById('videoStatus');
+  const chatStatus = document.getElementById('chatStatus');
+  const chatLog = document.getElementById('chatLog');
+  const askForm = document.getElementById('askForm');
+  const askBtn = document.getElementById('askBtn');
+  const questionInput = document.getElementById('questionInput');
+  const learningWorkspace = document.getElementById('learningWorkspace');
 
-let activeVideoUrl = defaultVideoUrl;
-let isReady = false;
-let activeNamespace = null;
+  // Safety check - if elements don't exist, we're on landing page
+  if (!videoUrlInput || !loadVideoBtn) {
+    console.log('App: Learning interface elements not found, on landing page');
+    setupLogoutButton();
+    setupSignUpButton();
+    setupStartLearningButton();
+    return;
+  }
 
-const setChip = (el, text) => {
-  el.textContent = text;
-};
+  let activeVideoUrl = defaultVideoUrl;
+  let isReady = false;
+  let activeNamespace = null;
 
-const addMessage = (role, text) => {
-  const p = document.createElement('p');
-  p.className = `msg ${role}`;
-  p.textContent = text;
-  chatLog.appendChild(p);
-  chatLog.scrollTop = chatLog.scrollHeight;
-};
+  const setChip = (el, text) => {
+    el.textContent = text;
+  };
 
-const clearChat = () => {
-  chatLog.innerHTML = '';
-};
+  const addMessage = (role, text) => {
+    const p = document.createElement('p');
+    p.className = `msg ${role}`;
+    p.textContent = text;
+    chatLog.appendChild(p);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  };
 
-const extractVideoId = (url) => {
-  const match = String(url || '').match(/(?:v=|youtu\.be\/)([^&?/]{11})/);
-  return match ? match[1] : null;
-};
+  const clearChat = () => {
+    chatLog.innerHTML = '';
+  };
 
-const updateIframe = (url) => {
+  const extractVideoId = (url) => {
+    const match = String(url || '').match(/(?:v=|youtu\.be\/)([^&?/]{11})/);
+    return match ? match[1] : null;
+  };
+
+  const updateIframe = (url) => {
   const videoId = extractVideoId(url);
   if (!videoId) {
     return false;
@@ -65,7 +148,7 @@ const initVideo = async (url) => {
 
   try {
     console.log('📡 Sending init request for:', url);
-    const resp = await fetch('/api/init', {
+    const resp = await fetchWithAuth('/api/init', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ videoUrl: url }),
@@ -139,7 +222,7 @@ askForm.addEventListener('submit', async (event) => {
 
   try {
     console.log('❓ Asking:', query);
-    const resp = await fetch('/api/ask', {
+    const resp = await fetchWithAuth('/api/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ videoUrl: activeVideoUrl, query }),
@@ -155,7 +238,10 @@ askForm.addEventListener('submit', async (event) => {
     }
 
     const answerText = data.answer || 'I could not find an answer.';
-    addMessage('ai', answerText);
+    const details = data.namespace
+      ? `\n\n[Video: ${data.namespace} | Chunks: ${data.chunkCount ?? 0}]`
+      : '';
+    addMessage('ai', `${answerText}${details}`);
     console.log(`✓ Answer generated using ${data.chunkCount} chunks in namespace ${data.namespace}`);
     setChip(chatStatus, '✓ Ready');
   } catch (error) {
@@ -168,18 +254,10 @@ askForm.addEventListener('submit', async (event) => {
   }
 });
 
-startLearningButtons.forEach((button) => {
-  button.addEventListener('click', () => {
-    learningWorkspace?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setTimeout(() => {
-      if (sourceInputSection && sourceInputSection.style.display !== 'none') {
-        videoUrlInput?.focus({ preventScroll: true });
-      } else {
-        questionInput?.focus({ preventScroll: true });
-      }
-    }, 450);
-  });
-});
+// Setup event listeners after DOM is ready
+setupStartLearningButton();
+setupSignUpButton();
+
   // videoUrlInput.value = defaultVideoUrl;
   // initVideo(defaultVideoUrl);
 
@@ -215,6 +293,9 @@ startLearningButtons.forEach((button) => {
       }
     });
   });
+
+  // Setup logout button
+  setupLogoutButton();
 
   // Philosophy Section GSAP Animation
 document.addEventListener('DOMContentLoaded', () => {
@@ -379,7 +460,7 @@ if (generateNotesBtn) {
     generateNotesBtn.textContent = 'Generating...';
 
     try {
-      const resp = await fetch('/api/notes', {
+      const resp = await fetchWithAuth('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ videoUrl: activeVideoUrl })
@@ -440,7 +521,7 @@ if (generateQuizBtn) {
     generateQuizBtn.textContent = 'Generating...';
 
     try {
-      const resp = await fetch('/api/quiz', {
+      const resp = await fetchWithAuth('/api/quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ videoUrl: activeVideoUrl })
@@ -539,7 +620,7 @@ if (submitQuizBtn) {
 
     if (activeVideoUrl) {
       try {
-        await fetch('/api/quiz/submit', {
+        await fetchWithAuth('/api/quiz/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ videoUrl: activeVideoUrl, score, total: currentQuizData.length, missed: missedDetails })
@@ -562,7 +643,7 @@ if (analyzeWeakBtn) {
     analyzeWeakBtn.textContent = 'Analyzing...';
 
     try {
-      const resp = await fetch('/api/weak-topics', {
+      const resp = await fetchWithAuth('/api/weak-topics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ videoUrl: activeVideoUrl })
