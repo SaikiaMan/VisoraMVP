@@ -11,6 +11,13 @@ const askBtn = document.getElementById('askBtn');
 const questionInput = document.getElementById('questionInput');
 const learningWorkspace = document.getElementById('learningWorkspace');
 
+// If we're not on the learn page, these elements won't exist
+if (!loadVideoBtn || !videoUrlInput || !askForm) {
+  console.log('⚠️ app.js: Learning workspace elements not found. This script is for /learn.html');
+  // Don't execute further if required elements don't exist
+}
+
+
 let activeVideoUrl = defaultVideoUrl;
 let isReady = false;
 let activeNamespace = null;
@@ -106,19 +113,23 @@ const initVideo = async (url) => {
   }
 };
 
-loadVideoBtn.addEventListener('click', async () => {
-  const candidate = videoUrlInput.value.trim() || defaultVideoUrl;
-  
-  // Transition UI: Hide center input, show active Notebook Workspace
-  if (sourceInputSection && mainWorkspace) {
-    sourceInputSection.style.display = 'none';
-    mainWorkspace.style.display = 'grid';
-  }
+// Only set up event listeners if elements exist (i.e., on learn.html)
+if (loadVideoBtn) {
+  loadVideoBtn.addEventListener('click', async () => {
+    const candidate = videoUrlInput.value.trim() || defaultVideoUrl;
+    
+    // Transition UI: Hide center input, show active Notebook Workspace
+    if (sourceInputSection && mainWorkspace) {
+      sourceInputSection.style.display = 'none';
+      mainWorkspace.style.display = 'grid';
+    }
 
-  await initVideo(candidate);
-});
+    await initVideo(candidate);
+  });
+}
 
-askForm.addEventListener('submit', async (event) => {
+if (askForm) {
+  askForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const query = questionInput.value.trim();
 
@@ -166,6 +177,7 @@ askForm.addEventListener('submit', async (event) => {
     askBtn.disabled = false;
   }
 });
+}
 
   // Start Learning button handlers are in index.html
   

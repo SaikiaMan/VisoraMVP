@@ -755,6 +755,19 @@
       const signupMessage = document.getElementById('signupMessage');
       const loginMessage = document.getElementById('loginMessage');
 
+      // Debug: Log which elements are missing
+      console.log('🔍 AUTH UI ELEMENTS CHECK:');
+      if (!authModal) console.error('❌ authModal is NULL!');
+      if (!modalOverlay) console.error('❌ modalOverlay is NULL!');
+      if (!choiceScreen) console.error('❌ choiceScreen is NULL!');
+      if (!signupForm) console.error('❌ signupForm is NULL!');
+      if (!loginForm) console.error('❌ loginForm is NULL!');
+      if (!createAccountBtn) console.error('❌ createAccountBtn is NULL!');
+      if (!loginBtn) console.error('❌ loginBtn is NULL!');
+      if (authModal && modalOverlay && choiceScreen && signupForm && loginForm) {
+        console.log('✅ All required elements exist!');
+      }
+
       // Check authentication status on page load
       async function initializeAuthUI() {
         try {
@@ -779,13 +792,22 @@
 
       // Helper functions
       function showModal() {
-        authModal.classList.remove('hidden');
-        authModal.classList.add('active');
+        console.log('📢 showModal() called');
+        console.log('  authModal:', authModal);
+        if (authModal) {
+          authModal.classList.remove('hidden');
+          authModal.classList.add('active');
+          console.log('✅ Modal shown, classes:', authModal.className);
+        } else {
+          console.error('❌ authModal is null, cannot show modal');
+        }
       }
 
       function hideModal() {
-        authModal.classList.add('hidden');
-        authModal.classList.remove('active');
+        if (authModal) {
+          authModal.classList.add('hidden');
+          authModal.classList.remove('active');
+        }
       }
 
       function showSection(section) {
@@ -908,8 +930,12 @@
       initializeAuthUI();
 
       // Handle "Start Learning" buttons
+      console.log('📍 Script reached: Looking for Start Learning buttons');
       const startLearningButtons = document.querySelectorAll('[data-start-learning]');
-      console.log('Start Learning buttons found:', startLearningButtons.length);
+      console.log('✅ Start Learning buttons found:', startLearningButtons.length);
+      if (startLearningButtons.length === 0) {
+        console.error('❌ NO START LEARNING BUTTONS FOUND!');
+      }
       
       startLearningButtons.forEach((button) => {
         button.addEventListener('click', async (e) => {
