@@ -29,6 +29,31 @@ async function callGroq(messages) {
 }
 
 /**
+ * Detects if query is asking about a specific timestamp
+ * Examples: "what at 20:20", "timestamp 5:30", "at 10:15:30"
+ * @param {string} query - User query
+ * @returns {Object} { isTimestampQuery: boolean, timestamp: string|null }
+ */
+function detectTimestampQuery(query) {
+  // Match patterns like: "20:20", "5:30", "10:15:30", "at 20:20", "timestamp 5:30"
+  const timestampMatch = query.match(
+    /(?:at|timestamp|around|about|near)?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?/i
+  );
+  
+  if (timestampMatch) {
+    return {
+      isTimestampQuery: true,
+      timestamp: timestampMatch[0].trim()
+    };
+  }
+  
+  return {
+    isTimestampQuery: false,
+    timestamp: null
+  };
+}
+
+/**
  * Normalizes text for similarity comparison
  * @param {string} text - Text to normalize
  * @returns {string} Normalized text
@@ -186,52 +211,86 @@ async function generateHybridAnswer(query, chunks, queryType) {
 
     if (queryType === 'TRANSCRIPT' && chunks.length > 0) {
       // RAG-focused: Answer must come from transcript
-      systemPrompt = `You are a YouTube copilot answering from video transcripts. Be helpful and clear.
+      systemPrompt = `You are an advanced AI tutor embedded in a YouTube learning platform.
 
-Your answer should:
-- Use simple, easy words (like you're explaining to a friend)
-- Break complex ideas into short paragraphs
-- Be direct - no hedging or uncertainty
-- Only use information from the transcript`;
+ANSWER STRUCTURE:
+1. Start with DIRECT ANSWER (1–2 lines max)
+2. If answer needs explanation:
+   - Add blank line
+   - Use bullet points with clear explanations
+   - Each bullet = one idea
+3. Keep language simple and clear
+4. NO markdown formatting, NO ### headings
 
-      userPrompt = `Transcript: ${chunks.join(' ')}
+STYLE:
+- Direct and to the point
+- Use bullets for steps/explanations
+- Clean white space between sections
+- Avoid long paragraphs`;
+
+      userPrompt = `You are answering from this video transcript:
+${chunks.join(' ')}
 
 Question: ${query}
 
-Answer (use short paragraphs, simple words):`;
+Answer: Direct answer first, then bullet points if needed. No headings or markdown.`;
     } else if (queryType === 'GENERAL') {
       // LLM-only: General knowledge answer
-      systemPrompt = `You are a helpful tutor. Answer clearly and simply.
+      systemPrompt = `You are an advanced AI tutor embedded in a YouTube learning platform.
 
-Your answer should:
-- Use easy, everyday words
-- Break into short paragraphs (2-3 sentences each)
-- Be confident and direct
-- Explain like talking to a friend`;
+ANSWER STRUCTURE:
+1. Start with DIRECT ANSWER (1–2 lines max)
+2. If answer needs explanation:
+   - Add blank line
+   - Use bullet points with clear explanations
+   - Each bullet = one idea
+3. Keep language simple and clear
+4. NO markdown formatting, NO ### headings
+
+STYLE:
+- Direct and to the point
+- Use bullets for steps/explanations
+- Clean white space between sections
+- Avoid long paragraphs`;
 
       userPrompt = `Question: ${query}
 
-Answer (short paragraphs, simple words):`;
+Answer: Direct answer first, then bullet points if needed. No headings or markdown.`;
     } else {
       // HYBRID: Combine transcript + general knowledge
-      systemPrompt = `You are a YouTube copilot. Answer using the transcript AND your knowledge.
+      systemPrompt = `You are an advanced AI tutor embedded in a YouTube learning platform.
 
-Your answer should:
-- Use simple, easy words
-- Break into short paragraphs
-- First share what the video says
-- Then add helpful general knowledge
-- Be clear and direct`;
+ANSWER STRUCTURE:
+1. Start with DIRECT ANSWER (1–2 lines max)
+2. If answer needs explanation:
+   - Add blank line
+   - Use bullet points with clear explanations
+   - Each bullet = one idea
+3. Keep language simple and clear
+4. NO markdown formatting, NO ### headings
+
+RULES:
+- Use transcript as foundation
+- If incomplete, add your knowledge
+- Synthesize and explain clearly
+- Use bullets for multiple steps or points
+
+STYLE:
+- Direct and to the point
+- Use bullets for steps/explanations
+- Clean white space between sections
+- Avoid long paragraphs`;
 
       const transcriptSection = chunks.length > 0 
-        ? `Transcript: ${chunks.join(' ')}
+        ? `Video transcript context:
+${chunks.join(' ')}
 
 ` 
         : '';
 
       userPrompt = `${transcriptSection}Question: ${query}
 
-Answer (short paragraphs, simple words):`;
+Answer: Direct answer first, then bullet points if needed. No headings or markdown.`;
     }
 
     // ── PASS 1: Generate raw answer ────────────────────────────────────
@@ -244,23 +303,34 @@ Answer (short paragraphs, simple words):`;
     const polishedAnswer = await callGroq([
       {
         role: 'system',
-        content: `You are a world-class editor. Transform this answer into ChatGPT style - natural, clear, well-structured.
+        content: `You are an editor. Your job: Format this answer cleanly and readably.
 
-CRITICAL RULES:
-1. STRUCTURE: Break into SHORT paragraphs (2-3 sentences each). Use blank lines between paragraphs.
-2. LANGUAGE: Use simple, everyday words. Avoid jargon. Short sentences.
-3. CLARITY: Be direct. Remove ALL hedging: "it seems", "might be", "appears", "possibly"
-4. NO MARKDOWN: NO headings, NO bold, NO bullets, NO asterisks, NO numbered lists
-5. LENGTH: If complex topic, use multiple short paragraphs. If simple, 1-2 paragraphs.
+TARGET FORMAT:
+1. If simple topic: 2-3 sentences directly, then blank line, then bullet points
+2. If complex topic: Direct answer first (1-2 lines), then bullet points with sub-explanations
+3. IMPORTANT: Clean separation between text and points
+4. IMPORTANT: NO ### headings, NO markdown
+5. Bullet format: "- Point: explanation"
+6. Remove repetition
 
-EXAMPLE (STRUCTURED):
-Gen AI is a course that teaches artificial intelligence using Python. It's designed for people who want to learn how AI works.
+RULES:
+- Bullet points should be SEPARATE from paragraphs (blank line before first bullet)
+- Each bullet = one clear idea with explanation
+- Simple language, no jargon
+- If answer has multiple steps/parts, use bullets
+- NO markdown headings or bold formatting
 
-The program organizes students into groups called cohorts. Each group goes through the material together and learns at the same pace.
+EXAMPLE OUTPUT:
+"Machine learning trains computers to recognize patterns without explicit programming.
 
-Based on the transcript, at least one cohort has already completed the program. This shows it's an active learning initiative.
+- Identify the problem: Define what you want the model to learn (e.g., image recognition)
+- Collect data: Gather examples relevant to your task
+- Choose algorithm: Select appropriate model (decision trees, neural networks, etc.)
+- Train the model: Let it learn patterns from your data
+- Test and evaluate: Check accuracy on new data
+- Refine: Improve performance by adjusting parameters"
 
-Now transform - SHORT paragraphs, simple words, blank lines between them:`,
+Now format this answer - keep direct statement first, then clean bullet points:`,
       },
       {
         role: 'user',
@@ -270,15 +340,30 @@ Now transform - SHORT paragraphs, simple words, blank lines between them:`,
 
     let finalAnswer = polishedAnswer || rawAnswer || 'Unable to generate answer.';
 
-    // Sanitize and format
+    // Sanitize and format - preserve markdown structure
     finalAnswer = finalAnswer
       .replace(/\[\s*(Video|Chunks|Transcript)[^\]]*\]/gi, '') // Remove metadata
-      .replace(/#+\s*/g, '') // Remove any markdown headings
-      .replace(/\n\s*[-*•]\s+/g, '\n') // Remove bullet points
-      .replace(/\n\s*\d+\.\s+/g, '\n') // Remove numbered lists
-      .replace(/\*\*/g, '') // Remove bold markers
       .replace(/\n\n+/g, '\n\n') // Normalize multiple line breaks to double
       .trim();
+
+    // ── PASS 3: Only apply sentence breaks if NO structured format ──────
+    // Check if answer already has bullets/numbers (structured format)
+    const hasStructure = /\n\s*[-*•]\s|\n\s*\d+\.\s/m.test(finalAnswer);
+    
+    if (!hasStructure && finalAnswer.length > 200) {
+      // No structure AND long answer - force break by sentences
+      const sentences = finalAnswer.match(/[^.!?]+[.!?]+/g) || [finalAnswer];
+      const formattedParagraphs = [];
+      
+      for (let i = 0; i < sentences.length; i += 2) {
+        const para = sentences.slice(i, i + 2).join('').trim();
+        if (para.length > 0) {
+          formattedParagraphs.push(para);
+        }
+      }
+      
+      finalAnswer = formattedParagraphs.join('\n\n');
+    }
 
     return finalAnswer;
   } catch (error) {
@@ -296,8 +381,24 @@ Now transform - SHORT paragraphs, simple words, blank lines between them:`,
  */
 async function processQueryWithHybridIntelligence(query, rawChunks) {
   try {
+    // Step 0: Detect timestamp queries
+    const { isTimestampQuery, timestamp } = detectTimestampQuery(query);
+    
+    let chunksToUse = rawChunks;
+    if (isTimestampQuery && rawChunks.length > 0) {
+      // Prioritize chunks containing the timestamp
+      const timestampRegex = new RegExp(timestamp.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      const chunksWithTimestamp = rawChunks.filter(chunk => timestampRegex.test(chunk));
+      
+      if (chunksWithTimestamp.length > 0) {
+        // Put timestamp chunks first, then other relevant chunks
+        chunksToUse = [...chunksWithTimestamp, ...rawChunks.filter(chunk => !chunksWithTimestamp.includes(chunk))];
+        logger.info({ timestamp, matchingChunks: chunksWithTimestamp.length }, 'Timestamp detected - prioritizing matched chunks');
+      }
+    }
+
     // Step 1: Score and filter chunks
-    const { relevantChunks, avgScore } = filterAndScoreChunks(rawChunks, query);
+    const { relevantChunks, avgScore } = filterAndScoreChunks(chunksToUse, query);
     logger.info({ queryType: 'HYBRID', relevance: avgScore.toFixed(2) }, 'Chunk relevance calculated');
 
     // Step 2: Classify query type
@@ -314,7 +415,12 @@ async function processQueryWithHybridIntelligence(query, rawChunks) {
       usedTranscript = true;
     } else if (queryType === 'GENERAL' || relevantChunks.length === 0) {
       // General knowledge answer (no transcript needed)
-      answer = await generateHybridAnswer(query, [], 'GENERAL');
+      // For timestamp queries with no matching chunks, offer helpful context
+      if (isTimestampQuery && relevantChunks.length === 0) {
+        answer = `I couldn't find content at timestamp ${timestamp}. Please try another timestamp or ask a general question about the video topic.`;
+      } else {
+        answer = await generateHybridAnswer(query, [], 'GENERAL');
+      }
       usedTranscript = false;
     } else {
       // HYBRID: Use both transcript and general knowledge
@@ -343,9 +449,9 @@ async function processQueryWithHybridIntelligence(query, rawChunks) {
  */
 function generateFallbackAnswer(query, relevanceScore) {
   if (relevanceScore < 0.3) {
-    return `I'm having trouble connecting your question to the video content. Could you try rephrasing it? Or I can help with general knowledge about similar topics if that would be useful.`;
+    return `I couldn't find information about this in the video. Try asking about something else from the video, or I can help with general knowledge about this topic.`;
   }
-  return `I found some related content but couldn't form a complete answer. The video discusses related topics - you might want to review that section of the video for more details.`;
+  return `I found some related content in the video but couldn't form a complete answer. You might want to watch that part of the video for more details.`;
 }
 
 export {

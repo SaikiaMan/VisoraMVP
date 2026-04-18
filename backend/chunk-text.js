@@ -6,32 +6,53 @@ function chunkTexts(text, chunkSize = 350, overlapSize = 80) {
 
   const chunks = [];
   let current = "";
+  let currentTimestamp = null;
+  let firstTimestampInChunk = null;
 
   for (const sentence of sentences) {
+    // Extract timestamp from sentence if it exists: [MM:SS] or [HH:MM:SS]
+    const timestampMatch = sentence.match(/\[(\d{1,2}):(\d{2}):?(\d{2})?\]/);
+    let timestamp = null;
+    
+    if (timestampMatch) {
+      timestamp = timestampMatch[0]; // Keep the [MM:SS] format
+      if (!firstTimestampInChunk) {
+        firstTimestampInChunk = timestamp;
+      }
+      currentTimestamp = timestamp;
+    }
+
     // If a single sentence is itself larger than chunkSize, force-split it
-    if (sentence.length > chunkSize) {
-      if (current.trim()) {
-        chunks.push(current.trim());
-        current = "";
-      }
-      let i = 0;
-      while (i < sentence.length) {
-        const slice = sentence.slice(i, i + chunkSize);
-        chunks.push(slice.trim());
-        i += chunkSize - overlapSize;
-      }
-      continue;
+    if (sentence.length > chunkSize && current.length > 0) {
+      // Save current chunk with timestamp
+      chunks.push({
+        content: current.trim(),
+        timestamp: firstTimestampInChunk || null
+      });
+      current = "";
+      firstTimestampInChunk = null;
     }
 
     if ((current + sentence).length > chunkSize && current.length > 0) {
-      chunks.push(current.trim());
+      // Save current chunk with timestamp
+      chunks.push({
+        content: current.trim(),
+        timestamp: firstTimestampInChunk || null
+      });
       current = current.slice(-overlapSize) + sentence;
+      firstTimestampInChunk = currentTimestamp || firstTimestampInChunk;
     } else {
       current += sentence;
     }
   }
 
-  if (current.trim()) chunks.push(current.trim());
+  if (current.trim()) {
+    chunks.push({
+      content: current.trim(),
+      timestamp: firstTimestampInChunk || null
+    });
+  }
+
   return chunks;
 }
 
