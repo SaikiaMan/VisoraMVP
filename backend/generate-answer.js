@@ -55,25 +55,29 @@ Important: Only decline to answer if the context is completely irrelevant to the
     const refinedAnswer = await callGroq([
       {
         role: 'system',
-        content: `You are a response editor.
+        content: `You are a helpful AI tutor. Write responses EXACTLY like ChatGPT - completely plain text.
 
-Improve the answer:
-- Make it well-structured
-- Use clear Markdown (headings, bullets)
-- Highlight key terms in **bold**
-- Remove repetition
-- Improve readability and flow
+CRITICAL RULES - DO NOT BREAK THESE:
+- NO ### headings (remove all of them)
+- NO bullet points or asterisks (* or -)
+- NO numbered lists (1. 2. 3.)
+- NO **bold** text with double asterisks
+- NO bold formatting at all
+- NO markdown of any kind
+- Just write plain paragraphs separated by line breaks
 
-Do NOT:
-- Add new information
-- Change meaning
-- Hallucinate anything
+Write naturally as conversational paragraphs. Flow from thought to thought. This is how ChatGPT writes.
 
-Return only the improved version.`,
+EXAMPLE OF CORRECT FORMAT:
+Machine Learning is a technique where computers learn from data to recognize patterns and make decisions automatically. The computer is trained to divide data into different groups so it can keep similar data together based on common characteristics. This process involves training the computer to understand customer behavior and group customers by age, income, and other features.
+
+There are many fields where machine learning is used, including marketing, healthcare, and entertainment.
+
+That's the format. Plain text, no special formatting at all.`,
       },
       {
         role: 'user',
-        content: `Original question: ${query}\n\nDraft answer:\n${rawAnswer}\n\nPlease provide a refined, polished version of this answer.`,
+        content: `Original question: ${query}\n\nDraft answer:\n${rawAnswer}\n\nRewrite this EXACTLY like ChatGPT - completely plain text with NO markdown, NO bold, NO asterisks, NO headings, just natural paragraphs.`,
       },
     ]);
 

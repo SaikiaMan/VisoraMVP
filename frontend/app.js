@@ -1,5 +1,6 @@
 const defaultVideoUrl = 'https://youtu.be/dAF5FngVa7A?si=W0YcpQwORJI0rApq';
 
+// DOM Elements
 const videoUrlInput = document.getElementById('videoUrl');
 const loadVideoBtn = document.getElementById('loadVideoBtn');
 const videoFrame = document.getElementById('videoFrame');
@@ -9,24 +10,28 @@ const chatLog = document.getElementById('chatLog');
 const askForm = document.getElementById('askForm');
 const askBtn = document.getElementById('askBtn');
 const questionInput = document.getElementById('questionInput');
-const learningWorkspace = document.getElementById('learningWorkspace');
+const sourceInputSection = document.getElementById('sourceInputSection');
+const videoContainer = document.getElementById('videoContainer');
+const videoLoadInput = document.getElementById('videoLoadInput');
+const questionInputContainer = document.getElementById('questionInputContainer');
+const recentSearchesList = document.getElementById('recentSearchesList');
 
 // If we're not on the learn page, these elements won't exist
 if (!loadVideoBtn || !videoUrlInput || !askForm) {
   console.log('⚠️ app.js: Learning workspace elements not found. This script is for /learn.html');
-  // Don't execute further if required elements don't exist
 }
-
 
 let activeVideoUrl = defaultVideoUrl;
 let isReady = false;
 let activeNamespace = null;
+let recentSearches = JSON.parse(localStorage.getItem('visora_recent_searches')) || [];
 
 const setChip = (el, text) => {
-  el.textContent = text;
+  if (el) el.textContent = text;
 };
 
 const addMessage = (role, text) => {
+  if (!chatLog) return;
   const p = document.createElement('p');
   p.className = `msg ${role}`;
   p.textContent = text;
@@ -34,8 +39,75 @@ const addMessage = (role, text) => {
   chatLog.scrollTop = chatLog.scrollHeight;
 };
 
+const addAnimatedMessage = async (role, text) => {
+  if (!chatLog) return;
+  const p = document.createElement('p');
+  p.className = `msg ${role} streaming`;
+  p.textContent = '';
+  chatLog.appendChild(p);
+  
+  // Stream text character by character with animation
+  let charIndex = 0;
+  const streamChar = () => {
+    if (charIndex < text.length) {
+      p.textContent += text[charIndex];
+      charIndex++;
+      chatLog.scrollTop = chatLog.scrollHeight;
+      // Vary the speed slightly for natural feel
+      const delay = Math.random() * 20 + 10; // 10-30ms per character
+      setTimeout(streamChar, delay);
+    } else {
+      // Remove streaming class when done
+      p.classList.remove('streaming');
+    }
+  };
+  
+  streamChar();
+};
+
+const addTypingIndicator = () => {
+  if (!chatLog) return;
+  const div = document.createElement('div');
+  div.className = 'typing-indicator';
+  div.id = 'typing-indicator';
+  div.innerHTML = '<p class="msg ai"><span></span><span></span><span></span></p>';
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+};
+
+const removeTypingIndicator = () => {
+  const indicator = document.getElementById('typing-indicator');
+  if (indicator) indicator.remove();
+};
+
 const clearChat = () => {
-  chatLog.innerHTML = '';
+  if (chatLog) chatLog.innerHTML = '';
+};
+
+const addToRecentSearches = (url) => {
+  const videoId = extractVideoId(url);
+  if (!videoId) return;
+  
+  // Add to recent searches (max 10)
+  recentSearches = [url, ...recentSearches.filter(u => u !== url)].slice(0, 10);
+  localStorage.setItem('visora_recent_searches', JSON.stringify(recentSearches));
+  renderRecentSearches();
+};
+
+const renderRecentSearches = () => {
+  if (!recentSearchesList) return;
+  recentSearchesList.innerHTML = '';
+  recentSearches.forEach(url => {
+    const item = document.createElement('div');
+    item.className = 'recent-item';
+    item.textContent = `📹 ${extractVideoId(url)}`;
+    item.title = url;
+    item.addEventListener('click', () => {
+      videoUrlInput.value = url;
+      loadVideoBtn.click();
+    });
+    recentSearchesList.appendChild(item);
+  });
 };
 
 const extractVideoId = (url) => {
@@ -49,24 +121,32 @@ const updateIframe = (url) => {
     return false;
   }
 
-  videoFrame.src = `https://www.youtube.com/embed/${videoId}`;
+  if (videoFrame) {
+    videoFrame.src = `https://www.youtube.com/embed/${videoId}`;
+  }
   return true;
+};
+
+const showVideo = () => {
+  if (sourceInputSection) sourceInputSection.style.display = 'none';
+  const videoAndChatContainer = document.getElementById('videoAndChatContainer');
+  if (videoAndChatContainer) videoAndChatContainer.style.display = 'flex';
+  if (videoLoadInput) videoLoadInput.style.display = 'none';
+  if (questionInputContainer) questionInputContainer.style.display = 'block';
+  clearChat(); // Clear previous messages
 };
 
 const initVideo = async (url) => {
   const previousNamespace = activeNamespace;
   const videoIdOk = updateIframe(url);
   if (!videoIdOk) {
-    addMessage('system', '❌ Invalid YouTube URL. Please try again.');
+    alert('❌ Invalid YouTube URL. Please try again.');
     setChip(videoStatus, 'Invalid URL');
-    setChip(chatStatus, 'Blocked');
     return;
   }
 
   setChip(videoStatus, '⏳ Loading...');
-  setChip(chatStatus, '⏳ Preparing...');
-  loadVideoBtn.disabled = true;
-  askBtn.disabled = true;
+  if (loadVideoBtn) loadVideoBtn.disabled = true;
   isReady = false;
 
   try {
@@ -90,14 +170,8 @@ const initVideo = async (url) => {
     activeNamespace = data.namespace || null;
     isReady = true;
     setChip(videoStatus, '✓ Ready');
-    setChip(chatStatus, '✓ Ask away');
-
-    if (previousNamespace && activeNamespace && previousNamespace !== activeNamespace) {
-      clearChat();
-      addMessage('system', `✅ Switched to new video (${activeNamespace}). Ask questions for this video only.`);
-    } else {
-      addMessage('system', `✅ Video loaded (${activeNamespace || 'unknown'}). Start asking your questions.`);
-    }
+    showVideo();
+    addToRecentSearches(url);
 
     console.log('✅ Video ready, namespace:', data.namespace);
   } catch (error) {
@@ -105,492 +179,125 @@ const initVideo = async (url) => {
     const msg = error.message || 'Could not load video. Check the URL and ensure it has captions.';
     console.error('Error:', msg);
     setChip(videoStatus, '❌ Error');
-    setChip(chatStatus, '❌ Failed');
-    addMessage('system', msg);
+    alert(msg);
   } finally {
-    loadVideoBtn.disabled = false;
-    askBtn.disabled = false;
+    if (loadVideoBtn) loadVideoBtn.disabled = false;
   }
 };
 
-// Only set up event listeners if elements exist (i.e., on learn.html)
+// Load video button click handler
 if (loadVideoBtn) {
   loadVideoBtn.addEventListener('click', async () => {
     const candidate = videoUrlInput.value.trim() || defaultVideoUrl;
-    
-    // Transition UI: Hide center input, show active Notebook Workspace
-    if (sourceInputSection && mainWorkspace) {
-      sourceInputSection.style.display = 'none';
-      mainWorkspace.style.display = 'grid';
-    }
-
     await initVideo(candidate);
   });
 }
 
+// Ask form submission
 if (askForm) {
   askForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const query = questionInput.value.trim();
+    event.preventDefault();
+    const query = questionInput.value.trim();
 
-  if (!query) {
-    return;
-  }
-
-  if (!isReady) {
-    addMessage('system', '⚠️ Load a video with captions first, then ask your questions.');
-    return;
-  }
-
-  addMessage('user', query);
-  questionInput.value = '';
-  askBtn.disabled = true;
-  setChip(chatStatus, '🤔 Thinking...');
-
-  try {
-    console.log('❓ Asking:', query);
-    const resp = await fetch('/api/ask', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ videoUrl: activeVideoUrl, query }),
-    });
-
-    const data = await resp.json();
-    console.log('📥 Answer response:', data);
-    
-    if (!resp.ok || !data.ok) {
-      const errorMsg = data.error || 'Could not generate answer.';
-      console.error('Answer failed:', errorMsg);
-      throw new Error(errorMsg);
-    }
-
-    const answerText = data.answer || 'I could not find an answer.';
-    addMessage('ai', answerText);
-    console.log(`✓ Answer generated using ${data.chunkCount} chunks in namespace ${data.namespace}`);
-    setChip(chatStatus, '✓ Ready');
-  } catch (error) {
-    const msg = error.message || 'There was a problem getting an answer.';
-    console.error('Answer error:', msg);
-    addMessage('system', `❌ ${msg}`);
-    setChip(chatStatus, '❌ Retry');
-  } finally {
-    askBtn.disabled = false;
-  }
-});
-}
-
-  // Start Learning button handlers are in index.html
-  
-  // videoUrlInput.value = defaultVideoUrl;
-  // initVideo(defaultVideoUrl);
-
-  // NotebookLM Layout switching and Tabs logic
-  const sourceInputSection = document.getElementById('sourceInputSection');     
-  const mainWorkspace = document.getElementById('mainWorkspace');
-
-  const tabBtns = document.querySelectorAll('.tab-btn');
-  const tabContents = document.querySelectorAll('.tab-content');
-
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      // Deactivate all
-      tabBtns.forEach(b => {
-         b.classList.remove('active');
-         b.style.background = 'transparent';
-         b.style.border = '1px solid transparent';
-         b.style.color = 'var(--text-secondary)';
-      });
-      tabContents.forEach(content => content.style.display = 'none');
-
-      // Activate clicked
-      btn.classList.add('active');
-      btn.style.background = 'var(--surface-light)';
-      btn.style.border = '1px solid rgba(255,255,255,0.1)';
-      btn.style.color = 'white';
-
-      // Show content
-      const targetId = 'tab-' + btn.getAttribute('data-tab');
-      const contentEl = document.getElementById(targetId);
-      if(contentEl) {
-        contentEl.style.display = 'flex';
-      }
-    });
-  });
-
-  // Philosophy Section GSAP Animation
-document.addEventListener('DOMContentLoaded', () => {
-  const philSection = document.querySelector('.philosophy-section');
-  if (!philSection || typeof gsap === 'undefined') return;
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const tl = gsap.timeline();
-        
-        tl.fromTo('.phil-label', 
-          { opacity: 0, y: -24 },
-          { opacity: 1, y: 0, duration: 0.7, ease: "power2.out", delay: 0.1 }
-        );
-
-        tl.fromTo('.phil-quote',
-          { opacity: 0, y: 24 },
-          { opacity: 1, y: 0, duration: 0.9, ease: "power2.out" },
-          0.3 // relative absolute frame in GSAP
-        );
-
-        tl.to('.phil-underline', 
-          { width: "100%", duration: 0.7, ease: "power2.out", stagger: 0.15 },
-          1.2
-        );
-
-        tl.fromTo('.phil-divider',
-          { opacity: 0, scaleY: 0 },
-          { opacity: 1, scaleY: 1, duration: 0.7, ease: "power2.out", transformOrigin: "top" },
-          1.2
-        );
-
-        tl.fromTo('.phil-subtext',
-          { opacity: 0, y: 24 },
-          { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" },
-          1.5
-        );
-
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.3 });
-
-  observer.observe(philSection);
-});
-
-// Epoch Section GSAP Animation
-document.addEventListener('DOMContentLoaded', () => {
-  const epochSection = document.querySelector('.epoch-section');
-  if (!epochSection || typeof gsap === 'undefined') return;
-
-  const epochObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const tl = gsap.timeline();
-        
-        // Left Card Animations
-        tl.fromTo('.epoch-card-title', 
-          { opacity: 0, y: 40 },
-          { opacity: 1, y: 0, duration: 1.2, ease: "power3.out" }
-        );
-        tl.fromTo('.epoch-card-sub',
-          { opacity: 0 },
-          { opacity: 1, duration: 0.8 },
-          0.6
-        );
-        tl.fromTo('.epoch-cta-wrapper',
-          { opacity: 0, scale: 0.92 },
-          { opacity: 1, scale: 1, duration: 0.5 },
-          1.1
-        );
-        tl.fromTo('.epoch-illustration',
-          { opacity: 0, scale: 0.85 },
-          { opacity: 1, scale: 1, duration: 1, ease: "power2.out" },
-          1.3
-        );
-        tl.fromTo('.epoch-icon-row',
-          { opacity: 0 },
-          { opacity: 1, duration: 0.6 },
-          1.7
-        );
-
-        // Right Info Animations
-        tl.fromTo('.epoch-info-title',
-          { opacity: 0, x: 60 },
-          { opacity: 1, x: 0, duration: 1.2, ease: "power3.out" },
-          0.2
-        );
-        tl.fromTo('.epoch-info-sub',
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 1 },
-          0.6
-        );
-        tl.fromTo('.epoch-stat',
-          { opacity: 0, scale: 0.9 },
-          { opacity: 1, scale: 1, duration: 0.7, ease: "power2.out", stagger: 0.15 },
-          0.9
-        );
-
-        epochObserver.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.2 });
-
-  epochObserver.observe(epochSection);
-});
-
-// Coded Hero Background Animations
-document.addEventListener('DOMContentLoaded', () => {
-  const star3d = document.querySelector('.star-3d');
-  const sphere = document.querySelector('.purple-sphere');
-  const hands = document.querySelectorAll('.pix-hand');
-
-  // GSAP 3D Scroll Rotation for Star
-  if (star3d) {
-    window.addEventListener('scroll', () => {
-      const scrollY = window.scrollY;
-      // Map scroll to 3D rotation values
-      star3d.style.transform = `rotateY(${scrollY * 0.15}deg) rotateX(${scrollY * 0.05}deg)`;
-    });
-  }
-
-  // GSAP Floating Sphere Animation
-  if (sphere && typeof gsap !== 'undefined') {
-    gsap.to(sphere, {
-      y: -20,
-      duration: 2,
-      ease: "sine.inOut",
-      yoyo: true,
-      repeat: -1
-    });
-  }
-  
-  // Fade and Slide Hands on Load
-  if (hands.length === 2 && typeof gsap !== 'undefined') {
-    gsap.fromTo(hands[0], 
-      { x: -50, opacity: 0 }, 
-      { x: 0, opacity: 0.8, duration: 1.5, ease: "power2.out", delay: 0.2 }
-    );
-    gsap.fromTo(hands[1], 
-      { x: 50, opacity: 0 }, 
-      { x: 0, opacity: 0.8, duration: 1.5, ease: "power2.out", delay: 0.2 }
-    );
-  }
-})
-
-
-// Notes Generator Logic
-const generateNotesBtn = document.getElementById('generateNotesBtn');
-const notesContainer = document.getElementById('notesContainer');
-const notesPlaceholder = document.getElementById('notesPlaceholder');
-
-if (generateNotesBtn) {
-  generateNotesBtn.addEventListener('click', async () => {
-    if (!activeVideoUrl || !isReady) {
-      alert('Please load a video first!');
+    if (!query) {
       return;
     }
 
-    generateNotesBtn.disabled = true;
-    generateNotesBtn.textContent = 'Generating...';
+    if (!isReady) {
+      alert('⚠️ Load a video with captions first, then ask your questions.');
+      return;
+    }
+
+    addMessage('user', query);
+    questionInput.value = '';
+    questionInput.style.height = 'auto';
+    if (askBtn) askBtn.disabled = true;
+    
+    // Show typing indicator
+    addTypingIndicator();
 
     try {
-      const resp = await fetch('/api/notes', {
+      console.log('❓ Asking:', query);
+      const resp = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoUrl: activeVideoUrl })
+        body: JSON.stringify({ videoUrl: activeVideoUrl, query }),
       });
 
       const data = await resp.json();
-
+      console.log('📥 Answer response:', data);
+      
+      removeTypingIndicator();
+      
       if (!resp.ok || !data.ok) {
-        throw new Error(data.error || 'Failed to generate notes.');
+        const errorMsg = data.error || 'Could not generate answer.';
+        console.error('Answer failed:', errorMsg);
+        throw new Error(errorMsg);
       }
 
-      let text = (data.notes || '');
-      // Markdown Parsing
-      text = text.replace(/^# (.*$)/gim, '<h2 style="margin-top:20px; font-weight: bold;">$1</h2>');
-      text = text.replace(/^## (.*$)/gim, '<h3 style="margin-top:16px; font-weight: bold;">$1</h3>');
-      text = text.replace(/^### (.*$)/gim, '<h4 style="margin-top:12px; font-weight: bold;">$1</h4>');
-      text = text.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
-      text = text.replace(/\n\n/g, '<br/><br/>');
-      text = text.replace(/\n/g, '<br/>');
+      const answerText = data.answer || 'I could not find an answer.';
+      await addAnimatedMessage('ai', answerText);
+      console.log(`✓ Answer generated using ${data.chunkCount} chunks in namespace ${data.namespace}`);
+    } catch (error) {
+      removeTypingIndicator();
+      const msg = error.message || 'There was a problem getting an answer.';
+      console.error('Answer error:', msg);
+      addMessage('system', `❌ ${msg}`);
+    } finally {
+      if (askBtn) askBtn.disabled = false;
+    }
+  });
 
-      if (notesPlaceholder) notesPlaceholder.style.display = 'none';
-      if (notesContainer) {
-        notesContainer.style.display = 'block';
-        notesContainer.innerHTML = text;
+  // Handle Enter key to submit (Shift+Enter for newline)
+  if (questionInput) {
+    questionInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        askForm.dispatchEvent(new Event('submit'));
       }
+    });
 
-    } catch(err) {
-      alert('Error generating notes: ' + err.message);
-    }
-    generateNotesBtn.disabled = false;
-    generateNotesBtn.textContent = 'Generate Notes';
-  });
+    // Auto-expand textarea as user types
+    questionInput.addEventListener('input', () => {
+      questionInput.style.height = 'auto';
+      const newHeight = Math.min(questionInput.scrollHeight, 200);
+      questionInput.style.height = newHeight + 'px';
+    });
+  }
 }
 
-// Quiz and Weak Topics Logic
-const generateQuizBtn = document.getElementById('generateQuizBtn');
-const quizContainer = document.getElementById('quizContainer');
-const quizForm = document.getElementById('quizForm');
-const submitQuizBtn = document.getElementById('submitQuizBtn');
-const quizResults = document.getElementById('quizResults');
-
-const analyzeWeakBtn = document.getElementById('analyzeWeakbtn');
-const weakTopicsContainer = document.getElementById('weakTopicsContainer');
-const weakPlaceholderIcon = document.getElementById('weakPlaceholderIcon');
-const weakPlaceholderTitle = document.getElementById('weakPlaceholderTitle');
-const weakPlaceholderDesc = document.getElementById('weakPlaceholderDesc');
-
-let currentQuizData = null;
-
-if (generateQuizBtn) {
-  generateQuizBtn.addEventListener('click', async () => {
-    if (!activeVideoUrl || !isReady) {
-      alert('Please load a video first!');
-      return;
-    }
-
-    generateQuizBtn.disabled = true;
-    generateQuizBtn.textContent = 'Generating...';
-
-    try {
-      const resp = await fetch('/api/quiz', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoUrl: activeVideoUrl })
-      });
-
-      const data = await resp.json();
-      if (!resp.ok || !data.ok) throw new Error(data.error);
-
-      currentQuizData = data.quiz;
-      renderQuiz(currentQuizData);
-    } catch(err) {
-      alert('Error generating quiz: ' + err.message);
-    }
-
-    generateQuizBtn.disabled = false;
-    generateQuizBtn.style.display = 'none';
-    generateQuizBtn.textContent = 'Generate Another Quiz';
-  });
-}
-
-function renderQuiz(quiz) {
-  quizContainer.style.display = 'block';
-  quizForm.innerHTML = '';
-  quizResults.innerHTML = '';
-  submitQuizBtn.style.display = 'inline-block';
-
-  quiz.forEach((q, index) => {
-    const qDiv = document.createElement('div');
-    qDiv.style.marginBottom = '20px';
+// Sidebar feature buttons
+document.querySelectorAll('[data-feature]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const feature = btn.dataset.feature;
     
-    const title = document.createElement('p');
-    title.innerHTML = '<strong>' + (index + 1) + '. ' + q.question + '</strong>';
-    qDiv.appendChild(title);
-
-    q.options.forEach((opt, optIndex) => {
-      const label = document.createElement('label');
-      label.style.display = 'block';
-      label.style.marginBottom = '8px';
-      label.style.cursor = 'pointer';
-      
-      const input = document.createElement('input');
-      input.type = 'radio';
-      input.name = 'q' + index;
-      input.value = optIndex;
-      input.style.marginRight = '8px';
-
-      label.appendChild(input);
-      label.appendChild(document.createTextNode(opt));
-      qDiv.appendChild(label);
-    });
-
-    const explanation = document.createElement('div');
-    explanation.id = 'expl_' + index;
-    explanation.style.display = 'none';
-    explanation.style.fontSize = '0.9em';
-    explanation.style.color = '#ddd';
-    explanation.style.marginTop = '8px';
-    explanation.style.padding = '8px 12px';
-    explanation.style.backgroundColor = 'rgba(255,255,255,0.05)';
-    explanation.style.borderRadius = '4px';
-    explanation.innerHTML = '<i>' + q.explanation + '</i>';
-    qDiv.appendChild(explanation);
-
-    quizForm.appendChild(qDiv);
-  });
-}
-
-if (submitQuizBtn) {
-  submitQuizBtn.addEventListener('click', async () => {
-    if (!currentQuizData) return;
-
-    let score = 0;
-    let missedDetails = [];
-    const formData = new FormData(quizForm);
-
-    currentQuizData.forEach((q, index) => {
-      const selected = formData.get('q' + index);
-      const explNode = document.getElementById('expl_' + index);
-
-      if (selected !== null && parseInt(selected) === q.answerIndex) {
-        score++;
-        explNode.style.borderLeft = '4px solid #4CAF50';
-      } else {
-        missedDetails.push(q.question);
-        explNode.style.borderLeft = '4px solid #F44336';
-      }
-      
-      explNode.style.display = 'block';
-    });
-
-    submitQuizBtn.style.display = 'none';
-    generateQuizBtn.style.display = 'inline-block';
-    generateQuizBtn.textContent = 'Generate Next Quiz';
-
-    quizResults.textContent = 'You scored ' + score + ' out of ' + currentQuizData.length + '!';
-
-    if (activeVideoUrl) {
-      try {
-        await fetch('/api/quiz/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ videoUrl: activeVideoUrl, score, total: currentQuizData.length, missed: missedDetails })
-        });
-      } catch (err) {
-        console.error('Could not submit quiz score:', err);
-      }
-    }
-  });
-}
-
-if (analyzeWeakBtn) {
-  analyzeWeakBtn.addEventListener('click', async () => {
-    if (!activeVideoUrl || !isReady) {
-      alert('Please load a video first!');
+    if (!isReady) {
+      alert('Please load a video first');
       return;
     }
 
-    analyzeWeakBtn.disabled = true;
-    analyzeWeakBtn.textContent = 'Analyzing...';
-
-    try {
-      const resp = await fetch('/api/weak-topics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoUrl: activeVideoUrl })
-      });
-
-      const data = await resp.json();
-      if (!resp.ok || !data.ok) throw new Error(data.error);
-
-      let text = (data.weakTopics || '');
-      text = text.replace(/^# (.*$)/gim, '<h2 style="margin-top:16px; font-weight: bold;">$1</h2>');
-      text = text.replace(/^## (.*$)/gim, '<h3 style="margin-top:12px; font-weight: bold;">$1</h3>');
-      text = text.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
-      text = text.replace(/\n\n/g, '<br/><br/>');
-      text = text.replace(/\n/g, '<br/>');
-
-      weakPlaceholderIcon.style.display = 'none';
-      weakPlaceholderTitle.style.display = 'none';
-      weakPlaceholderDesc.style.display = 'none';
-      
-      weakTopicsContainer.style.display = 'block';
-      weakTopicsContainer.innerHTML = text;
-
-    } catch(err) {
-      alert('Error analyzing weak topics: ' + err.message);
+    if (feature === 'doubt') {
+      alert('Use the search bar below to ask questions');
+    } else if (feature === 'notes') {
+      alert('Notes generator feature coming soon');
+    } else if (feature === 'quiz') {
+      alert('Quiz feature coming soon');
+    } else if (feature === 'weak') {
+      alert('Weak topics detection coming soon');
     }
+  });
+});
 
-    analyzeWeakBtn.disabled = false;
-    analyzeWeakBtn.textContent = 'Refresh Weak Topics';
+// Load video from sidebar
+const loadVideoFromSidebar = document.getElementById('loadVideoFromSidebar');
+if (loadVideoFromSidebar) {
+  loadVideoFromSidebar.addEventListener('click', () => {
+    if (videoLoadInput) {
+      videoLoadInput.style.display = 'flex';
+      if (videoUrlInput) videoUrlInput.focus();
+    }
   });
 }
+
+// Initialize recent searches
+renderRecentSearches();
