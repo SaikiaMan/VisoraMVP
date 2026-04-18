@@ -3,19 +3,45 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // Initialize Supabase client
 let supabaseClient = null;
 
+async function fetchSupabaseConfig() {
+  const configUrls = ['/api/config'];
+
+  // Fallback for cases where frontend is opened from a different origin
+  // than the backend (for example Live Server or file preview).
+  if (typeof window !== 'undefined' && window.location.origin !== 'http://localhost:3000') {
+    configUrls.push('http://localhost:3000/api/config');
+  }
+
+  let lastError = null;
+
+  for (const configUrl of configUrls) {
+    try {
+      const response = await fetch(configUrl, { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(`Config request failed (${response.status}) at ${configUrl}`);
+      }
+
+      const config = await response.json();
+      if (config?.supabaseUrl && config?.supabaseAnonKey) {
+        return config;
+      }
+
+      throw new Error(`Supabase config missing URL/key at ${configUrl}`);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Could not load Supabase configuration.');
+}
+
 async function initializeSupabase() {
   if (supabaseClient) {
     return supabaseClient;
   }
 
   try {
-    // Fetch config from server
-    const response = await fetch('/api/config');
-    if (!response.ok) {
-      throw new Error('Failed to fetch Supabase configuration');
-    }
-
-    const { supabaseUrl, supabaseAnonKey } = await response.json();
+    const { supabaseUrl, supabaseAnonKey } = await fetchSupabaseConfig();
 
     if (!supabaseUrl || !supabaseAnonKey) {
       throw new Error('Supabase credentials are not configured. Please check your .env file.');
@@ -30,27 +56,71 @@ async function initializeSupabase() {
   }
 }
 
+function isAlreadyRegisteredError(error) {
+  const message = String(error?.message || '').toLowerCase();
+  const code = String(error?.code || '').toLowerCase();
+
+  return (
+    message.includes('already registered') ||
+    message.includes('already exists') ||
+    message.includes('email exists') ||
+    message.includes('duplicate') ||
+    code.includes('already_exists') ||
+    code.includes('email_exists')
+  );
+}
+
+function isInvalidCredentialError(error) {
+  const message = String(error?.message || '').toLowerCase();
+  const code = String(error?.code || '').toLowerCase();
+
+  return (
+    message.includes('invalid login credentials') ||
+    message.includes('invalid credentials') ||
+    code.includes('invalid_credentials') ||
+    code.includes('invalid_grant')
+  );
+}
+
 /**
  * Sign up a new user with email and password
  */
 export async function signUpUser(email, password, fullName) {
   try {
-    console.log('📝 Signing up user:', email);
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const normalizedName = String(fullName || '').trim();
+
+    console.log('📝 Signing up user:', normalizedEmail);
     
     const client = await initializeSupabase();
     const { data, error } = await client.auth.signUp({
-      email,
+      email: normalizedEmail,
       password,
       options: {
         data: {
-          full_name: fullName,
+          full_name: normalizedName,
         },
       },
     });
 
     if (error) {
+      if (isAlreadyRegisteredError(error)) {
+        return {
+          success: false,
+          error: 'Account already exists. Please log in instead.',
+          errorCode: 'ACCOUNT_EXISTS',
+        };
+      }
+
       console.error('❌ Sign up error:', error);
       throw error;
+    }
+
+    if (!data?.user?.id) {
+      return {
+        success: false,
+        error: 'Unable to create account right now. Please try logging in or try again in a moment.',
+      };
     }
 
     console.log('✅ Sign up successful:', data);
@@ -94,15 +164,25 @@ export async function signUpUser(email, password, fullName) {
  */
 export async function loginUser(email, password) {
   try {
-    console.log('🔑 Logging in user:', email);
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    console.log('🔑 Logging in user:', normalizedEmail);
     
     const client = await initializeSupabase();
     const { data, error } = await client.auth.signInWithPassword({
-      email,
+      email: normalizedEmail,
       password,
     });
 
     if (error) {
+      if (isInvalidCredentialError(error)) {
+        return {
+          success: false,
+          error:
+            'Invalid email or password. If this account already exists, use the correct password or reset it.',
+          errorCode: 'INVALID_CREDENTIALS',
+        };
+      }
+
       console.error('❌ Login error:', error);
       throw error;
     }
