@@ -125,13 +125,47 @@ async function retrieveRelevantChunks(query, namespace) {
       return b.length - a.length; // Tiebreaker: longer chunks are better
     });
 
-    // Return more chunks to improve recall for follow-up questions.
-    // Always return chunks even if score is 0 - the AI may find connections.
-    const ranked = scored.slice(0, 12).map((item) => item.chunk);
+    // HYBRID INTELLIGENCE: Return more chunks for better hybrid processing
+    // The hybrid system will filter by relevance threshold
+    const ranked = scored.slice(0, 20).map((item) => item.chunk);
 
     return ranked;
   } catch (error) {
     logger.error({ err: error }, 'Error retrieving relevant chunks');
+    throw error;
+  }
+}
+
+/**
+ * Enhanced retrieval with similarity scores
+ * Used by hybrid intelligence system for threshold-based filtering
+ * @param {string} query - Search query
+ * @param {string} namespace - Video namespace
+ * @returns {Promise<Array>} Chunks with scores: { chunk, score }
+ */
+async function retrieveChunksWithScores(query, namespace) {
+  try {
+    const chunks = namespaceChunks.get(namespace) || [];
+    if (!chunks.length) {
+      return [];
+    }
+
+    const queryTokens = normalizeText(query)
+      .split(' ')
+      .filter(Boolean);
+
+    const scored = chunks.map((chunk) => ({
+      chunk,
+      score: scoreChunk(queryTokens, chunk),
+    }));
+
+    // Sort by score descending
+    scored.sort((a, b) => b.score - a.score);
+
+    // Return all scored chunks, hybrid system decides filtering
+    return scored.slice(0, 25);
+  } catch (error) {
+    logger.error({ err: error }, 'Error retrieving chunks with scores');
     throw error;
   }
 }
@@ -145,6 +179,7 @@ async function getAllChunks(namespace) {
     createIndex,
     describeIndexStats,
     retrieveRelevantChunks,
+    retrieveChunksWithScores,
     checkIndexExists,
     hasStoredChunks,
     getAllChunks,
