@@ -734,7 +734,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script type="module" src="/app.js"></script>
     <script type="module">
-      import { signUpUser, loginUser, logoutUser, getCurrentUser } from '/auth.js';
+      import { signUpUser, loginUser, logoutUser, getCurrentUser } from '/auth.js?v=20260418b';
 
       const authModal = document.getElementById('authModal');
       const modalOverlay = document.getElementById('modalOverlay');
@@ -857,8 +857,8 @@
       signupFormElement.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const fullName = document.getElementById('fullName').value;
-        const email = document.getElementById('signupEmail').value;
+        const fullName = document.getElementById('fullName').value.trim();
+        const email = document.getElementById('signupEmail').value.trim().toLowerCase();
         const password = document.getElementById('signupPassword').value;
 
         signupMessage.textContent = 'Creating account...';
@@ -885,7 +885,24 @@
             }
           }, 1500);
         } else {
-          signupMessage.textContent = '❌ ' + result.error;
+          const rawError = String(result.error || '');
+          const isExistingAccount =
+            result.errorCode === 'ACCOUNT_EXISTS' ||
+            /already registered|already exists|user_already_exists/i.test(rawError);
+
+          if (isExistingAccount) {
+            alert('Account already exists. Please log in with this email.');
+            showSection(loginForm);
+            const loginEmailInput = document.getElementById('loginEmail');
+            if (loginEmailInput) {
+              loginEmailInput.value = email;
+              loginEmailInput.focus();
+            }
+          }
+
+          signupMessage.textContent = isExistingAccount
+            ? '❌ Account already exists. Please log in instead.'
+            : '❌ ' + rawError;
           signupMessage.classList.add('error');
         }
       });
@@ -894,7 +911,7 @@
       loginFormElement.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const email = document.getElementById('loginEmail').value;
+        const email = document.getElementById('loginEmail').value.trim().toLowerCase();
         const password = document.getElementById('loginPassword').value;
 
         loginMessage.textContent = 'Logging in...';
@@ -921,7 +938,14 @@
             }
           }, 1500);
         } else {
-          loginMessage.textContent = '❌ ' + result.error;
+          const rawError = String(result.error || '');
+          const isInvalidCredentials =
+            result.errorCode === 'INVALID_CREDENTIALS' ||
+            /invalid login credentials|invalid credentials/i.test(rawError);
+
+          loginMessage.textContent = isInvalidCredentials
+            ? '❌ Invalid email or password. Use the correct password for this account.'
+            : '❌ ' + rawError;
           loginMessage.classList.add('error');
         }
       });
