@@ -186,68 +186,48 @@ async function generateHybridAnswer(query, chunks, queryType) {
 
     if (queryType === 'TRANSCRIPT' && chunks.length > 0) {
       // RAG-focused: Answer must come from transcript
-      systemPrompt = `You are a YouTube learning copilot helping students understand video content.
+      systemPrompt = `You are a YouTube copilot answering from video transcripts.
 
-Your task: Answer based ONLY on the provided video transcript.
+Be direct: Answer the question using the transcript. Be concise (2-3 sentences if possible).
+- Only use information from the transcript
+- Never make up or assume information
+- If the transcript doesn't cover it, say so briefly`;
 
-Rules:
-- Extract relevant information directly from the transcript
-- Be specific and cite what the video says
-- If the exact answer isn't in the transcript, explain what you found instead
-- Never make up information not in the transcript
+      userPrompt = `Transcript: ${chunks.join(' ')}
 
-Write naturally like ChatGPT - plain paragraphs, no markdown.`;
+Question: ${query}
 
-      userPrompt = `Video Transcript: ${chunks.join(' ')}
-
-Student Question: ${query}
-
-Answer based on the transcript above:`;
+Answer:`;
     } else if (queryType === 'GENERAL') {
       // LLM-only: General knowledge answer
-      systemPrompt = `You are a helpful AI tutor explaining concepts clearly.
+      systemPrompt = `You are a helpful tutor. Answer the question clearly and concisely.
+- Be direct and avoid hedging language
+- Skip unnecessary elaboration
+- Use simple explanations
+- Be confident in your answer`;
 
-Your task: Answer the student's question using your general knowledge.
+      userPrompt = `Question: ${query}
 
-Rules:
-- Provide clear, accurate explanations
-- Use examples when helpful
-- Don't mention the video or transcript
-- Be conversational and friendly
-
-Write naturally like ChatGPT - plain paragraphs, no markdown.`;
-
-      userPrompt = `Student Question: ${query}
-
-Provide a clear explanation:`;
+Answer:`;
     } else {
       // HYBRID: Combine transcript + general knowledge
-      systemPrompt = `You are a YouTube learning copilot helping students learn from videos.
+      systemPrompt = `You are a YouTube copilot. Answer using the transcript AND your knowledge.
 
-Your task: Answer the question using both the video transcript and your general knowledge.
-
-Structure your answer:
-1. First, share relevant information from the video
-2. Then, explain or expand with general knowledge if needed
-3. Connect them together
-
-Rules:
-- Use video content when relevant
-- Don't hallucinate transcript content
-- Use knowledge to bridge gaps
-- Be clear about what comes from the video vs. general knowledge
-
-Write naturally like ChatGPT - plain paragraphs, no markdown.`;
+Be concise:
+- Share relevant transcript info first
+- Fill gaps with general knowledge
+- Connect them naturally
+- Keep it brief`;
 
       const transcriptSection = chunks.length > 0 
-        ? `Video Transcript Excerpt: ${chunks.join(' ')}
+        ? `Transcript excerpt: ${chunks.join(' ')}
 
 ` 
         : '';
 
-      userPrompt = `${transcriptSection}Student Question: ${query}
+      userPrompt = `${transcriptSection}Question: ${query}
 
-Answer combining video and general knowledge:`;
+Answer:`;
     }
 
     // ── PASS 1: Generate raw answer ────────────────────────────────────
@@ -260,19 +240,28 @@ Answer combining video and general knowledge:`;
     const polishedAnswer = await callGroq([
       {
         role: 'system',
-        content: `You are a response editor. Polish the answer to read exactly like ChatGPT.
+        content: `You are a world-class editor. Your job: Transform this answer into ChatGPT style - natural, concise, confident.
 
-Rules:
-- NO ### headings, NO bullet points, NO numbered lists
-- NO **bold** formatting or any markdown
-- Just plain paragraphs separated by line breaks
-- Keep all the information, just fix the formatting
+REQUIREMENTS:
+- Remove ALL hedging language: "it seems", "might be", "appears to be", "possibly", "perhaps", "it's difficult to", "without further context"
+- Remove repetition: Don't say the same thing twice in different ways
+- Be direct and confident: Choose a clear interpretation, don't list multiple possibilities
+- NO markdown: NO headings, NO bold, NO bullet points, NO asterisks, NO numbered lists
+- Keep it SHORT: 2-4 sentences max unless complex topic
+- Natural flow: Conversational, not academic
+- No unnecessary elaboration: Get to the point
 
-Return ONLY the polished text.`,
+EXAMPLE INPUT:
+"It seems to be a course, and it might be focused on AI. It appears to be related to learning about AI. However, without further context, it's difficult to provide a precise answer. It's possible that Gen AI is a program, but more details would be needed."
+
+EXAMPLE OUTPUT:
+"Gen AI appears to be a course or program focused on teaching AI and Python. Based on the mention of a completed cohort, it's likely a structured learning initiative."
+
+Now transform the given answer:`,
       },
       {
         role: 'user',
-        content: `Polish this answer:\n\n${rawAnswer}`,
+        content: `${rawAnswer}`,
       },
     ]);
 
