@@ -186,48 +186,52 @@ async function generateHybridAnswer(query, chunks, queryType) {
 
     if (queryType === 'TRANSCRIPT' && chunks.length > 0) {
       // RAG-focused: Answer must come from transcript
-      systemPrompt = `You are a YouTube copilot answering from video transcripts.
+      systemPrompt = `You are a YouTube copilot answering from video transcripts. Be helpful and clear.
 
-Be direct: Answer the question using the transcript. Be concise (2-3 sentences if possible).
-- Only use information from the transcript
-- Never make up or assume information
-- If the transcript doesn't cover it, say so briefly`;
+Your answer should:
+- Use simple, easy words (like you're explaining to a friend)
+- Break complex ideas into short paragraphs
+- Be direct - no hedging or uncertainty
+- Only use information from the transcript`;
 
       userPrompt = `Transcript: ${chunks.join(' ')}
 
 Question: ${query}
 
-Answer:`;
+Answer (use short paragraphs, simple words):`;
     } else if (queryType === 'GENERAL') {
       // LLM-only: General knowledge answer
-      systemPrompt = `You are a helpful tutor. Answer the question clearly and concisely.
-- Be direct and avoid hedging language
-- Skip unnecessary elaboration
-- Use simple explanations
-- Be confident in your answer`;
+      systemPrompt = `You are a helpful tutor. Answer clearly and simply.
+
+Your answer should:
+- Use easy, everyday words
+- Break into short paragraphs (2-3 sentences each)
+- Be confident and direct
+- Explain like talking to a friend`;
 
       userPrompt = `Question: ${query}
 
-Answer:`;
+Answer (short paragraphs, simple words):`;
     } else {
       // HYBRID: Combine transcript + general knowledge
       systemPrompt = `You are a YouTube copilot. Answer using the transcript AND your knowledge.
 
-Be concise:
-- Share relevant transcript info first
-- Fill gaps with general knowledge
-- Connect them naturally
-- Keep it brief`;
+Your answer should:
+- Use simple, easy words
+- Break into short paragraphs
+- First share what the video says
+- Then add helpful general knowledge
+- Be clear and direct`;
 
       const transcriptSection = chunks.length > 0 
-        ? `Transcript excerpt: ${chunks.join(' ')}
+        ? `Transcript: ${chunks.join(' ')}
 
 ` 
         : '';
 
       userPrompt = `${transcriptSection}Question: ${query}
 
-Answer:`;
+Answer (short paragraphs, simple words):`;
     }
 
     // ── PASS 1: Generate raw answer ────────────────────────────────────
@@ -240,24 +244,23 @@ Answer:`;
     const polishedAnswer = await callGroq([
       {
         role: 'system',
-        content: `You are a world-class editor. Your job: Transform this answer into ChatGPT style - natural, concise, confident.
+        content: `You are a world-class editor. Transform this answer into ChatGPT style - natural, clear, well-structured.
 
-REQUIREMENTS:
-- Remove ALL hedging language: "it seems", "might be", "appears to be", "possibly", "perhaps", "it's difficult to", "without further context"
-- Remove repetition: Don't say the same thing twice in different ways
-- Be direct and confident: Choose a clear interpretation, don't list multiple possibilities
-- NO markdown: NO headings, NO bold, NO bullet points, NO asterisks, NO numbered lists
-- Keep it SHORT: 2-4 sentences max unless complex topic
-- Natural flow: Conversational, not academic
-- No unnecessary elaboration: Get to the point
+CRITICAL RULES:
+1. STRUCTURE: Break into SHORT paragraphs (2-3 sentences each). Use blank lines between paragraphs.
+2. LANGUAGE: Use simple, everyday words. Avoid jargon. Short sentences.
+3. CLARITY: Be direct. Remove ALL hedging: "it seems", "might be", "appears", "possibly"
+4. NO MARKDOWN: NO headings, NO bold, NO bullets, NO asterisks, NO numbered lists
+5. LENGTH: If complex topic, use multiple short paragraphs. If simple, 1-2 paragraphs.
 
-EXAMPLE INPUT:
-"It seems to be a course, and it might be focused on AI. It appears to be related to learning about AI. However, without further context, it's difficult to provide a precise answer. It's possible that Gen AI is a program, but more details would be needed."
+EXAMPLE (STRUCTURED):
+Gen AI is a course that teaches artificial intelligence using Python. It's designed for people who want to learn how AI works.
 
-EXAMPLE OUTPUT:
-"Gen AI appears to be a course or program focused on teaching AI and Python. Based on the mention of a completed cohort, it's likely a structured learning initiative."
+The program organizes students into groups called cohorts. Each group goes through the material together and learns at the same pace.
 
-Now transform the given answer:`,
+Based on the transcript, at least one cohort has already completed the program. This shows it's an active learning initiative.
+
+Now transform - SHORT paragraphs, simple words, blank lines between them:`,
       },
       {
         role: 'user',
@@ -267,13 +270,14 @@ Now transform the given answer:`,
 
     let finalAnswer = polishedAnswer || rawAnswer || 'Unable to generate answer.';
 
-    // Sanitize
+    // Sanitize and format
     finalAnswer = finalAnswer
-      .replace(/\[\s*(Video|Chunks|Transcript)[^\]]*\]/gi, '')
+      .replace(/\[\s*(Video|Chunks|Transcript)[^\]]*\]/gi, '') // Remove metadata
       .replace(/#+\s*/g, '') // Remove any markdown headings
       .replace(/\n\s*[-*•]\s+/g, '\n') // Remove bullet points
       .replace(/\n\s*\d+\.\s+/g, '\n') // Remove numbered lists
       .replace(/\*\*/g, '') // Remove bold markers
+      .replace(/\n\n+/g, '\n\n') // Normalize multiple line breaks to double
       .trim();
 
     return finalAnswer;
