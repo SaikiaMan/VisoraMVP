@@ -34,11 +34,14 @@ const readyNamespaces = new Set();
 const initPromises = new Map();
 const userState = new Map(); // stores { doubts: [], quizzes: [] } per namespace
 
-// Initialize Supabase admin client (for server-side operations)
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// Initialize Supabase admin client (for server-side operations) only when configured.
+const supabaseAdmin =
+  process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)
+    ? createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
+      )
+    : null;
 
 // ── Security & middleware ──────────────────────────────────────────
 app.use(helmet({
@@ -278,7 +281,7 @@ app.post('/api/confirm-email', async (req, res) => {
 
   try {
     // Check if service role key is available
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !supabaseAdmin) {
       console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY not configured. Email confirmation disabled.');
       return res.status(200).json({
         ok: true,
