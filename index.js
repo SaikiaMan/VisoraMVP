@@ -2,7 +2,6 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import logger from './backend/logger.js';
@@ -41,18 +40,36 @@ const supabaseAdmin = createClient(
 );
 
 // ── Security & middleware ──────────────────────────────────────────
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      imgSrc: ["'self'", "data:", "https://images.unsplash.com", "https://cdn.unsplash.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      connectSrc: ["'self'", "https://api.openai.com", "https://cdn.jsdelivr.net", "https://*.supabase.co"],
-    },
-  },
-}));
+// Disable all CSP headers explicitly - runs BEFORE all routes
+app.use((req, res, next) => {
+  // Intercept res.setHeader to prevent CSP headers from being set
+  const originalSetHeader = res.setHeader;
+  res.setHeader = function(name, value) {
+    // Block CSP headers completely
+    if (name && name.toLowerCase().includes('content-security')) {
+      return res; // Don't set CSP headers, but return res for chaining
+    }
+    // Allow all other headers
+    originalSetHeader.call(this, name, value);
+    return res; // Return res for chaining
+  };
+  
+  // Also remove any existing CSP headers that might have been set earlier
+  res.removeHeader('Content-Security-Policy');
+  res.removeHeader('Content-Security-Policy-Report-Only');
+  res.removeHeader('X-Content-Security-Policy');
+  res.removeHeader('X-Frame-Options');
+  
+  // Allow CORS and framing
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  next();
+});
+
+const isDev = process.env.NODE_ENV !== 'production';
+
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json({ limit: '1mb' }));
 
@@ -453,6 +470,15 @@ app.post('/api/weak-topics', async (req, res) => {
 
 // Serve static files (CSS, JS, images, etc.) after all API routes
 app.use(express.static(path.join(__dirname, 'frontend')));
+
+// Final CSP cleanup - remove any CSP headers that made it past previous middleware
+app.use((req, res, next) => {
+  res.removeHeader('Content-Security-Policy');
+  res.removeHeader('Content-Security-Policy-Report-Only');
+  res.removeHeader('X-Content-Security-Policy');
+  res.removeHeader('X-Frame-Options');
+  next();
+});
 
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
