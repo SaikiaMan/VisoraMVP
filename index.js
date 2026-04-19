@@ -22,6 +22,12 @@ import {
   hasStoredChunks,
   getAllChunks,
 } from './backend/vectordatabase.js';
+// Advanced knowledge system
+import {
+  answerWithAdvancedKnowledge,
+  clearVideoKnowledgeCache,
+  getKnowledgeCacheStats,
+} from './backend/hybrid-intelligence.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -382,11 +388,44 @@ app.post('/api/ask', async (req, res) => {
     userState.get(namespace).doubts.push(query);
 
     const relevantChunksMatchingQuery = await retrieveRelevantChunks(query, namespace);
-    const answer = await generateAnswer(query, relevantChunksMatchingQuery);
+    
+    // TRY ADVANCED KNOWLEDGE SYSTEM FIRST
+    let answer = '';
+    let answerType = 'FALLBACK';
+    let usedAdvanced = false;
+
+    try {
+      const allChunks = await getAllChunks(namespace);
+      if (allChunks && allChunks.length > 0) {
+        const advancedResult = await answerWithAdvancedKnowledge(
+          query,
+          allChunks,
+          `video_${namespace}` // Cache key
+        );
+
+        if (advancedResult && advancedResult.answer) {
+          answer = advancedResult.answer;
+          answerType = advancedResult.answerType;
+          usedAdvanced = true;
+          logger.info({ answerType, confidence: advancedResult.confidence?.toFixed(2) }, 'Used advanced knowledge system');
+        }
+      }
+    } catch (advancedError) {
+      logger.warn('Advanced knowledge system failed, falling back to standard generation:', advancedError?.message);
+    }
+
+    // FALLBACK TO LEGACY SYSTEM IF ADVANCED FAILED
+    if (!answer) {
+      answer = await generateAnswer(query, relevantChunksMatchingQuery);
+      answerType = 'LEGACY_HYBRID';
+      usedAdvanced = false;
+    }
 
     res.json({
       ok: true,
       answer,
+      answerType,
+      usedAdvanced,
       chunkCount: relevantChunksMatchingQuery.length,
       namespace,
     });
@@ -484,6 +523,57 @@ app.use((req, res, next) => {
   res.removeHeader('X-Content-Security-Policy');
   res.removeHeader('X-Frame-Options');
   next();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ADVANCED KNOWLEDGE SYSTEM - UTILITY ENDPOINTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/knowledge-cache-stats
+ * Returns cache statistics for the advanced knowledge system
+ */
+app.get('/api/knowledge-cache-stats', (req, res) => {
+  try {
+    const stats = getKnowledgeCacheStats();
+    res.json({
+      ok: true,
+      cache: stats,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error('Failed to get cache stats:', error?.message);
+    res.status(500).json({
+      ok: false,
+      error: error?.message || 'Failed to get cache stats',
+    });
+  }
+});
+
+/**
+ * POST /api/clear-knowledge-cache
+ * Clears the advanced knowledge base cache for a specific video or all videos
+ * Body: { cacheKey: "video_namespace" } or { cacheKey: "ALL" }
+ */
+app.post('/api/clear-knowledge-cache', (req, res) => {
+  try {
+    const cacheKey = req.body?.cacheKey || 'ALL';
+    clearVideoKnowledgeCache(cacheKey);
+    
+    res.json({
+      ok: true,
+      cleared: cacheKey,
+      message: cacheKey === 'ALL' 
+        ? 'Cleared all video knowledge caches' 
+        : `Cleared cache for ${cacheKey}`,
+    });
+  } catch (error) {
+    logger.error('Failed to clear cache:', error?.message);
+    res.status(500).json({
+      ok: false,
+      error: error?.message || 'Failed to clear cache',
+    });
+  }
 });
 
 app.use((req, res) => {

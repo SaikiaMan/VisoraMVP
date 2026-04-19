@@ -15,6 +15,7 @@
         margin: 0;
         padding: 0;
         overflow: hidden;
+        background: var(--bg-main);
       }
 
       .page {
@@ -24,100 +25,184 @@
       }
 
       .navbar {
-        border-bottom: 1px solid rgba(255,255,255,0.1);
+        border-bottom: var(--border-light);
         padding: 0;
         z-index: 100;
         height: auto;
         min-height: 50px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(16px);
       }
 
       .workspace-section {
         display: flex;
         flex: 1;
         overflow: hidden;
+        gap: 0;
       }
 
       /* Left Sidebar */
       .sidebar {
-        width: 140px;
-        background: var(--surface-dark);
-        border-right: 1px solid rgba(255,255,255,0.1);
+        width: 260px;
+        background: var(--bg-surface);
+        border-right: 1px solid var(--border-light);
         display: flex;
         flex-direction: column;
-        padding: 20px 0 0 0;
+        padding: 0;
         margin: 0;
-        gap: 0px;
+        gap: 0;
         overflow-y: auto;
+      }
+
+      /* Sidebar branding */
+      .sidebar::before {
+        content: 'Visora';
+        display: none;
+        padding: 16px 20px;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--accent-primary);
+        border-bottom: 1px solid var(--border-light);
+        letter-spacing: -0.5px;
       }
 
       .sidebar-section {
         display: flex;
         flex-direction: column;
-        gap: 0 px;
+        gap: 8px;
+        padding: 0;
+      }
+
+      .sidebar-section:first-of-type {
+        padding: 16px 12px;
+      }
+
+      .sidebar-section:not(:first-of-type) {
+        padding: 12px 12px;
+        border-top: 1px solid var(--border-light);
       }
 
       .sidebar-title {
-        font-size: 10px;
+        font-size: 12px;
         font-weight: 600;
         text-transform: uppercase;
         color: var(--text-muted);
         letter-spacing: 0.5px;
-        margin: 8px 0 6px 0;
-        text-align: center;
+        margin: 8px 0 12px 0;
+        padding: 0 8px;
       }
 
       .sidebar-btn {
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 0;
-        padding: 8px 6px;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 6px;
+        gap: 12px;
+        padding: 10px 12px;
+        background: transparent;
+        border: 1px solid var(--border-light);
+        border-radius: 8px;
         color: var(--text-main);
         cursor: pointer;
-        transition: all 0.2s;
-        font-size: 11px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 13px;
         font-weight: 500;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .sidebar-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, var(--accent-glow) 0%, transparent 100%);
+        opacity: 0;
+        transition: opacity 0.25s;
       }
 
       .sidebar-btn:hover {
-        background: rgba(255,255,255,0.1);
-        border-color: rgba(255,255,255,0.2);
+        background: var(--bg-surface-elevated);
+        border-color: var(--accent-primary);
+        transform: translateX(4px);
+      }
+
+      .sidebar-btn:hover::before {
+        opacity: 1;
       }
 
       .sidebar-btn.active {
         background: var(--accent-primary);
         border-color: var(--accent-primary);
         color: white;
+        box-shadow: var(--shadow);
       }
 
       .sidebar-btn span {
-        font-size: 16px;
+        font-size: 18px;
       }
 
-      .sidebar-btn:last-child {
-        border-right: none;
-      }
-
-      /* Recent searches */
-      .recent-item {
-        padding: 6px 8px;
-        background: rgba(255,255,255,0.03);
-        border-radius: 6px;
-        color: var(--text-secondary);
-        font-size: 11px;
-        cursor: pointer;
-        transition: all 0.2s;
+      .sidebar-btn span:last-child {
+        flex: 1;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
 
+      /* Recent searches */
+      .recent-item {
+        padding: 10px 12px;
+        background: transparent;
+        border: 1px solid var(--border-light);
+        border-radius: 8px;
+        color: var(--text-muted);
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
       .recent-item:hover {
-        background: rgba(255,255,255,0.08);
+        background: var(--bg-surface-elevated);
+        border-color: var(--accent-primary);
         color: var(--text-main);
+        transform: translateX(4px);
+      }
+
+      /* Sidebar scrollbar */
+      #clearRecentBtn {
+        color: var(--text-muted);
+        font-size: 11px;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+
+      #clearRecentBtn:hover {
+        color: var(--accent-primary);
+        background: rgba(79, 70, 229, 0.1);
+      }
+
+      #clearRecentBtn:active {
+        transform: scale(0.95);
+      }
+
+      .sidebar::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .sidebar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .sidebar::-webkit-scrollbar-thumb {
+        background: rgba(79, 70, 229, 0.2);
+        border-radius: 3px;
+      }
+
+      .sidebar::-webkit-scrollbar-thumb:hover {
+        background: rgba(79, 70, 229, 0.4);
       }
 
       /* Main Content */
@@ -126,6 +211,14 @@
         display: flex;
         flex-direction: column;
         gap: 0;
+        overflow: hidden;
+      }
+
+      .feature-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
       }
 
       /* Video Section */
@@ -151,28 +244,42 @@
         flex: 0.4;
         display: flex;
         flex-direction: column;
-        border-left: 2px solid rgba(79, 70, 229, 0.5);
-        aspect-ratio: 1 / 1;
+        border-left: 1px solid var(--border-light);
         padding: 16px;
-        background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
-        gap: 8px;
+        background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-surface-elevated) 100%);
+        gap: 0;
         position: relative;
         overflow: hidden;
+        min-height: 0;
+      }
+      
+      #videoContainer {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(79, 70, 229, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(79, 70, 229, 0.15);
+        background: var(--bg-main);
+        backdrop-filter: blur(8px);
       }
       
       .video-wrapper::before {
         content: '';
         position: absolute;
         top: 0;
-        left: 0;
-        right: 0;
+        left: 16px;
+        right: 16px;
         bottom: 0;
-        background: radial-gradient(circle at top right, rgba(79, 70, 229, 0.15) 0%, transparent 60%);
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, transparent 70%);
         pointer-events: none;
+        border-radius: 16px;
       }
 
       #sourceInputSection {
-        display: flex;
+        display: none;
         flex-direction: column;
         align-items: center;
         justify-content: center;
@@ -182,13 +289,13 @@
       .video-container {
         width: 100%;
         height: 100%;
-        max-width: 100%;
         border-radius: 16px;
         overflow: hidden;
-        box-shadow: 0 12px 48px rgba(79, 70, 229, 0.25), inset 0 1px 1px rgba(255,255,255,0.2);
-        border: 1.5px solid rgba(79, 70, 229, 0.3);
+        box-shadow: 0 8px 32px rgba(79, 70, 229, 0.12);
+        border: 1px solid rgba(79, 70, 229, 0.15);
         position: relative;
         z-index: 1;
+        background: var(--bg-main);
       }
 
       #videoFrame {
@@ -200,23 +307,26 @@
       /* Chat Messages Panel */
       .chat-panel {
         flex: 0.6;
-        background: transparent;
+        background: linear-gradient(to bottom, var(--bg-main) 0%, rgba(248, 250, 252, 0.5) 100%);
         border: none;
         border-radius: 0;
         display: flex;
         flex-direction: column;
         overflow: hidden;
         padding: 0;
+        border-left: 1px solid var(--border-light);
       }
 
       .chat-header {
-        padding: 16px 0 16px 20px;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-light);
         font-size: 13px;
         font-weight: 600;
-        color: var(--text-secondary);
+        color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        background: rgba(248, 250, 252, 0.5);
+        backdrop-filter: blur(8px);
       }
 
       #chatLog {
@@ -250,7 +360,7 @@
       }
 
       #chatLog .msg.user {
-        background: linear-gradient(135deg, var(--accent-primary) 0%, rgba(79, 70, 229, 0.8) 100%);
+        background: var(--accent-primary);
         color: white;
         margin-left: auto;
         max-width: 85%;
@@ -259,11 +369,11 @@
       }
 
       #chatLog .msg.ai {
-        background: rgba(255,255,255,0.08);
+        background: var(--bg-surface);
         color: var(--text-main);
         margin-right: auto;
         max-width: 90%;
-        border: 1px solid rgba(79, 70, 229, 0.2);
+        border: 1px solid var(--border-light);
         border-left: 3px solid var(--accent-primary);
       }
 
@@ -357,8 +467,8 @@
       /* Bottom Input Section */
       .bottom-input-section {
         padding: 12px 12px 16px 12px;
-        border-top: 1px solid rgba(79, 70, 229, 0.2);
-        background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(79, 70, 229, 0.05) 100%);
+        border-top: 1px solid var(--border-light);
+        background: var(--bg-surface);
       }
 
       .input-container {
@@ -372,9 +482,9 @@
 
       #videoLoadInput {
         padding: 8px 12px;
-        border: 1.5px solid rgba(79, 70, 229, 0.3);
+        border: 1.5px solid var(--border-light);
         border-radius: 10px;
-        background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%);
+        background: var(--bg-surface-elevated);
         display: flex;
         gap: 8px;
         align-items: center;
@@ -385,8 +495,8 @@
       }
 
       #videoLoadInput:focus-within {
-        border-color: rgba(79, 70, 229, 0.6);
-        background: linear-gradient(135deg, rgba(79, 70, 229, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%);
+        border-color: var(--accent-primary);
+        background: var(--bg-surface-elevated);
         box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
       }
 
@@ -404,7 +514,7 @@
       }
 
       #videoUrl::placeholder {
-        color: rgba(255,255,255,0.65);
+        color: var(--text-muted);
         font-size: 14px;
       }
 
@@ -414,19 +524,21 @@
 
       #questionInputContainer {
         padding: 8px 12px;
-        border: 1.5px solid rgba(79, 70, 229, 0.3);
+        border: 1.5px solid var(--border-light);
         border-radius: 10px;
-        background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%);
-        margin: 8px 12px 12px 12px;
+        background: var(--bg-surface-elevated);
+        margin: 8px auto 12px auto;
         display: flex;
         align-items: center;
         position: relative;
         transition: all 0.3s ease;
+        width: 75%;
+        max-width: 100%;
       }
       
       #questionInputContainer:focus-within {
-        border-color: rgba(79, 70, 229, 0.6);
-        background: linear-gradient(135deg, rgba(79, 70, 229, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%);
+        border-color: var(--accent-primary);
+        background: var(--bg-surface-elevated);
         box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
       }
 
@@ -447,7 +559,7 @@
       }
       
       #questionInput::placeholder {
-        color: rgba(255,255,255,0.65);
+        color: var(--text-muted);
         font-size: 14px;
       }
       
@@ -456,7 +568,7 @@
       }
       
       #questionInput::-webkit-scrollbar-thumb {
-        background: rgba(79, 70, 229, 0.3);
+        background: rgba(79, 70, 229, 0.2);
         border-radius: 2px;
       }
 
@@ -484,13 +596,17 @@
         transform: translateY(-50%);
       }
 
-      .send-btn:hover:not(:disabled) {
+      #askForm .send-btn:hover:not(:disabled) {
         background: var(--accent-secondary);
-        transform: scale(1.05);
+        transform: translateY(-50%) scale(1.05);
       }
 
-      .send-btn:active:not(:disabled) {
-        transform: scale(0.95);
+      #askForm .send-btn:active:not(:disabled) {
+        transform: translateY(-50%) scale(0.95);
+      }
+
+      .send-btn:hover:not(:disabled) {
+        background: var(--accent-secondary);
       }
       
       .send-btn:disabled {
@@ -554,19 +670,19 @@
         
         <!-- Left Sidebar -->
         <aside class="sidebar">
-          <!-- Load Video Section -->
+          <!-- New Video Button -->
           <div class="sidebar-section">
-            <button class="sidebar-btn" id="loadVideoFromSidebar" style="background: var(--accent-primary); border-color: var(--accent-primary); color: white;">
-              <span class="material-symbols-outlined">add</span>
-              <span>Load Video</span>
+            <button class="sidebar-btn" id="loadVideoFromSidebar" style="background: var(--accent-primary); border-color: var(--accent-primary); color: white; box-shadow: var(--shadow); margin-bottom: 4px;">
+              <span class="material-symbols-outlined">add_circle</span>
+              <span>New Workspace</span>
             </button>
           </div>
 
           <!-- Features -->
           <div class="sidebar-section">
-            <div class="sidebar-title">Features</div>
-            <button class="sidebar-btn" data-feature="doubt">
-              <span class="material-symbols-outlined">help</span>
+            <div class="sidebar-title">✨ Features</div>
+            <button class="sidebar-btn active" data-feature="doubt">
+              <span class="material-symbols-outlined">help_outline</span>
               <span>AI Doubt Solver</span>
             </button>
             <button class="sidebar-btn" data-feature="notes">
@@ -578,91 +694,129 @@
               <span>AI Quiz</span>
             </button>
             <button class="sidebar-btn" data-feature="weak">
-              <span class="material-symbols-outlined">troubleshoot</span>
+              <span class="material-symbols-outlined">trending_up</span>
               <span>Weak Topics</span>
             </button>
           </div>
 
           <!-- Recent Searches -->
           <div class="sidebar-section">
-            <div class="sidebar-title">Recent Searches</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0 12px 0;">
+              <div class="sidebar-title" style="margin: 0;">📋 Recent</div>
+              <button id="clearRecentBtn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px 8px; font-size: 11px; font-weight: 600; transition: all 0.2s; border-radius: 4px;">
+                Clear
+              </button>
+            </div>
             <div id="recentSearchesList" style="display: flex; flex-direction: column; gap: 8px;">
               <!-- Recent searches will appear here -->
             </div>
           </div>
+
+
         </aside>
 
         <!-- Main Content -->
         <div class="main-content">
-          <!-- Video Section -->
-          <div class="video-section">
-            <!-- Initial Source Input -->
-            <div id="sourceInputSection" style="display: flex; flex-direction: column; align-items: center; gap: 24px; flex: 1; justify-content: center;">
-              <div style="text-align: center;">
-                <span class="material-symbols-outlined" style="font-size: 48px; color: var(--accent-primary); margin-bottom: 16px;">book_4</span>
-                <h2 style="font-size: 28px; margin: 16px 0 8px;">Load a Video to Start</h2>
-                <p style="color: var(--text-secondary); margin: 0;">Paste a YouTube link in the sidebar or search bar to begin</p>
-              </div>
-            </div>
-
-            <!-- Video and Chat Container -->
-            <div class="video-and-chat" id="videoAndChatContainer" style="display: none;">
-              <!-- Video Wrapper -->
-              <div class="video-wrapper">
-                <div id="videoContainer" style="width: 100%; height: 100%; border-radius: 12px; overflow: hidden;">
-                  <iframe
-                    id="videoFrame"
-                    title="Lesson Video"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowfullscreen
-                    style="width: 100%; height: 100%; border: none;"
-                  ></iframe>
+          
+          <!-- AI Doubt Solver Feature -->
+          <div class="feature-container" id="feature-doubt" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+            <!-- Video Section -->
+            <div class="video-section">
+              <!-- Initial Source Input -->
+              <div id="sourceInputSection" style="display: flex; flex-direction: column; align-items: center; gap: 24px; flex: 1; justify-content: center;">
+                <div style="text-align: center;">
+                  <span class="material-symbols-outlined" style="font-size: 48px; color: var(--accent-primary); margin-bottom: 16px;">book_4</span>
+                  <h2 style="font-size: 28px; margin: 16px 0 8px;">Load a Video to Start</h2>
                 </div>
               </div>
 
-              <!-- Chat Panel -->
-              <div class="chat-panel">
-                <div class="chat-header">💬 Conversation</div>
-                <div id="chatLog" aria-live="polite">
-                  <!-- Messages will appear here -->
+              <!-- Video and Chat Container -->
+              <div class="video-and-chat" id="videoAndChatContainer" style="display: none;">
+                <!-- Video Wrapper -->
+                <div class="video-wrapper">
+                  <div id="videoContainer" style="width: 100%; height: 100%; border-radius: 12px; overflow: hidden;">
+                    <iframe
+                      id="videoFrame"
+                      title="Lesson Video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowfullscreen
+                      style="width: 100%; height: 100%; border: none; margin: 0; padding: 0; display: block;"
+                    ></iframe>
+                  </div>
+                </div>
+
+                <!-- Chat Panel -->
+                <div class="chat-panel">
+                  <div class="chat-header">💬 Conversation</div>
+                  <div id="chatLog" aria-live="polite">
+                    <!-- Messages will appear here -->
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Bottom Input Section -->
-          <div class="bottom-input-section">
-            <div class="input-container">
-              <!-- Video Load Input (shown initially) -->
-              <div id="videoLoadInput" style="display: flex; gap: 8px;">
-                <span class="material-symbols-outlined" style="margin-top: 12px; color: var(--text-secondary);">link</span>
-                <input 
-                  id="videoUrl" 
-                  type="url" 
-                  placeholder="Paste YouTube link here..." 
-                  style="flex: 1; padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-main); font-size: 14px;"
-                />
-                <button id="loadVideoBtn" type="button" class="send-btn" style="width: auto; padding: 10px 20px;">
-                  <span class="material-symbols-outlined">check</span>
-                </button>
-              </div>
-
-              <!-- Question Input (hidden initially) -->
-              <div id="questionInputContainer" style="display: none;">
-                <form id="askForm" class="ask-form" style="position: relative; width: 100%;">
-                  <textarea 
-                    id="questionInput" 
-                    rows="1" 
-                    placeholder="Ask anything about the video..." 
-                    required
-                  ></textarea>
-                  <button id="askBtn" type="submit" class="send-btn">
-                    <span class="material-symbols-outlined">send</span>
+            <!-- Bottom Input Section -->
+            <div class="bottom-input-section">
+              <div class="input-container">
+                <!-- Video Load Input (shown initially) -->
+                <div id="videoLoadInput" style="display: flex; gap: 8px;">
+                  <span class="material-symbols-outlined" style="margin-top: 12px; color: var(--text-secondary);">link</span>
+                  <input 
+                    id="videoUrl" 
+                    type="url" 
+                    placeholder="Paste YouTube link here..." 
+                    style="flex: 1; padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-main); font-size: 14px;"
+                  />
+                  <button id="loadVideoBtn" type="button" class="send-btn" style="width: auto; padding: 10px 20px;">
+                    <span class="material-symbols-outlined">check</span>
                   </button>
-                </form>
+                </div>
+
+                <!-- Question Input (hidden initially) -->
+                <div id="questionInputContainer" style="display: none;">
+                  <form id="askForm" class="ask-form" style="position: relative; width: 100%;">
+                    <textarea 
+                      id="questionInput" 
+                      rows="1" 
+                      placeholder="Ask anything about the video..." 
+                      required
+                    ></textarea>
+                    <button id="askBtn" type="submit" class="send-btn">
+                      <span class="material-symbols-outlined">send</span>
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
+
+          <!-- Notes Feature -->
+          <div class="feature-container" id="feature-notes" style="display: none; flex: 1; overflow: auto; padding: 40px;">
+            <div style="text-align: center; color: var(--text-secondary);">
+              <span class="material-symbols-outlined" style="font-size: 48px; color: var(--accent-primary); margin-bottom: 16px;">note_add</span>
+              <h2 style="font-size: 28px; margin: 16px 0 8px; color: var(--text-main);">Generate Notes</h2>
+              <p style="margin: 0;">Load a video to generate smart notes from the content.</p>
+            </div>
+          </div>
+
+          <!-- Quiz Feature -->
+          <div class="feature-container" id="feature-quiz" style="display: none; flex: 1; overflow: auto; padding: 40px;">
+            <div style="text-align: center; color: var(--text-secondary);">
+              <span class="material-symbols-outlined" style="font-size: 48px; color: var(--accent-primary); margin-bottom: 16px;">quiz</span>
+              <h2 style="font-size: 28px; margin: 16px 0 8px; color: var(--text-main);">AI Quiz</h2>
+              <p style="margin: 0;">Load a video to generate an AI-powered quiz.</p>
+            </div>
+          </div>
+
+          <!-- Weak Topics Feature -->
+          <div class="feature-container" id="feature-weak" style="display: none; flex: 1; overflow: auto; padding: 40px;">
+            <div style="text-align: center; color: var(--text-secondary);">
+              <span class="material-symbols-outlined" style="font-size: 48px; color: var(--accent-primary); margin-bottom: 16px;">trending_up</span>
+              <h2 style="font-size: 28px; margin: 16px 0 8px; color: var(--text-main);">Weak Topics</h2>
+              <p style="margin: 0;">Load a video to identify your weak learning areas.</p>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -674,6 +828,56 @@
 
     <script src="/auth.js"></script>
     <script src="/app.js"></script>
+    <script>
+      // Feature switching functionality
+      document.addEventListener('DOMContentLoaded', () => {
+        const sidebarBtns = document.querySelectorAll('.sidebar-btn[data-feature]');
+        const featureContainers = document.querySelectorAll('.feature-container');
+        const clearRecentBtn = document.getElementById('clearRecentBtn');
+
+        sidebarBtns.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const feature = btn.getAttribute('data-feature');
+            
+            // Remove active class from all buttons
+            sidebarBtns.forEach(b => b.classList.remove('active'));
+            
+            // Add active class to clicked button
+            btn.classList.add('active');
+            
+            // Hide all feature containers
+            featureContainers.forEach(container => {
+              container.style.display = 'none';
+            });
+            
+            // Show the selected feature container
+            const selectedContainer = document.getElementById(`feature-${feature}`);
+            if (selectedContainer) {
+              selectedContainer.style.display = 'flex';
+              selectedContainer.style.flexDirection = 'column';
+            }
+          });
+        });
+
+        // Clear recent searches functionality
+        if (clearRecentBtn) {
+          clearRecentBtn.addEventListener('click', () => {
+            localStorage.removeItem('visora_recent_searches');
+            const recentList = document.getElementById('recentSearchesList');
+            if (recentList) {
+              recentList.innerHTML = '';
+            }
+            clearRecentBtn.textContent = 'Cleared';
+            setTimeout(() => {
+              clearRecentBtn.textContent = 'Clear';
+            }, 1500);
+          });
+        }
+
+        // Set AI Doubt Solver as active by default (already has active class in HTML)
+      });
+    </script>
     <script type="module">
       import { getCurrentUser } from '/auth.js';
 

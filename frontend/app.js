@@ -30,6 +30,22 @@ const setChip = (el, text) => {
   if (el) el.textContent = text;
 };
 
+const getYouTubeTitle = async (url) => {
+  try {
+    const videoId = extractVideoId(url);
+    if (!videoId) return null;
+    
+    const response = await fetch(`https://www.youtube.com/oembed?url=https://youtube.com/watch?v=${videoId}&format=json`);
+    if (response.ok) {
+      const data = await response.json();
+      return data.title || null;
+    }
+  } catch (error) {
+    console.log('Could not fetch video title:', error);
+  }
+  return null;
+};
+
 const addMessage = (role, text) => {
   if (!chatLog) return;
   const p = document.createElement('p');
@@ -84,12 +100,24 @@ const clearChat = () => {
   if (chatLog) chatLog.innerHTML = '';
 };
 
-const addToRecentSearches = (url) => {
+const addToRecentSearches = async (url) => {
   const videoId = extractVideoId(url);
   if (!videoId) return;
   
-  // Add to recent searches (max 10)
-  recentSearches = [url, ...recentSearches.filter(u => u !== url)].slice(0, 10);
+  // Fetch title from YouTube
+  const title = await getYouTubeTitle(url);
+  
+  // Create video object with URL and title
+  const videoObj = { url, title: title || videoId };
+  
+  // Filter out any old entries with same URL (handle both string and object formats)
+  recentSearches = recentSearches.filter(item => {
+    const itemUrl = typeof item === 'string' ? item : item.url;
+    return itemUrl !== url;
+  });
+  
+  // Add new video to beginning and keep max 10
+  recentSearches = [videoObj, ...recentSearches].slice(0, 10);
   localStorage.setItem('visora_recent_searches', JSON.stringify(recentSearches));
   renderRecentSearches();
 };
@@ -97,16 +125,20 @@ const addToRecentSearches = (url) => {
 const renderRecentSearches = () => {
   if (!recentSearchesList) return;
   recentSearchesList.innerHTML = '';
-  recentSearches.forEach(url => {
-    const item = document.createElement('div');
-    item.className = 'recent-item';
-    item.textContent = `📹 ${extractVideoId(url)}`;
-    item.title = url;
-    item.addEventListener('click', () => {
+  recentSearches.forEach(item => {
+    // Handle both old string format and new object format
+    const url = typeof item === 'string' ? item : item.url;
+    const title = typeof item === 'string' ? extractVideoId(item) : item.title;
+    
+    const div = document.createElement('div');
+    div.className = 'recent-item';
+    div.textContent = title;
+    div.title = url;
+    div.addEventListener('click', () => {
       videoUrlInput.value = url;
       loadVideoBtn.click();
     });
-    recentSearchesList.appendChild(item);
+    recentSearchesList.appendChild(div);
   });
 };
 
@@ -171,7 +203,7 @@ const initVideo = async (url) => {
     isReady = true;
     setChip(videoStatus, '✓ Ready');
     showVideo();
-    addToRecentSearches(url);
+    await addToRecentSearches(url);
 
     console.log('✅ Video ready, namespace:', data.namespace);
   } catch (error) {

@@ -75,6 +75,7 @@ h1, h2, h3, .brand, .kicker, button {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  padding-left: 32px;
 }
 
 button {
@@ -86,7 +87,7 @@ button {
 .nav-cta {
   background: transparent;
   color: var(--text-main);
-  padding: 8px 16px;
+  padding: 8px 32px 8px 16px;
   border-radius: 8px;
   font-weight: 600;
   font-size: 14px;
