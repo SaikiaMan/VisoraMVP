@@ -230,8 +230,9 @@ async function retrieveChunksByTimestamp(query, namespace) {
 }
 
 async function getAllChunks(namespace) {
-    return namespaceChunks.get(namespace) || [];
-  }
+  const chunks = namespaceChunks.get(namespace) || [];
+  return chunks.map((c) => (typeof c === 'string' ? c : (c.content || '')));
+}
 
   export {
     storeEmbeddings,
