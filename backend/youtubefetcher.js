@@ -272,6 +272,60 @@ class YoutubeTranscript {
       .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)));
   }
 
+  static async fetchVideoMetadata(videoId) {
+    const identifier = YoutubeTranscript.retrieveVideoId(videoId);
+    let title = '';
+    let author = '';
+    let description = '';
+
+    // 1. Try YouTube oEmbed API
+    try {
+      const resp = await fetch(
+        `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${identifier}&format=json`
+      );
+      if (resp.ok) {
+        const data = await resp.json();
+        title = data.title || '';
+        author = data.author_name || '';
+      }
+    } catch {
+      // Ignored
+    }
+
+    // 2. Try Innertube player for description and videoDetails
+    try {
+      const resp = await fetch(INNERTUBE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': ANDROID_USER_AGENT,
+        },
+        body: JSON.stringify({
+          context: { client: { clientName: 'ANDROID', clientVersion: ANDROID_VERSION } },
+          videoId: identifier,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const details = data?.videoDetails;
+        if (details) {
+          if (!title) title = details.title || '';
+          if (!author) author = details.author || '';
+          description = details.shortDescription || '';
+        }
+      }
+    } catch {
+      // Ignored
+    }
+
+    return {
+      videoId: identifier,
+      title: title || `YouTube Video (${identifier})`,
+      author: author || 'YouTube Creator',
+      description: description || '',
+    };
+  }
+
   static retrieveVideoId(videoId) {
     if (typeof videoId !== 'string') {
       throw new YoutubeTranscriptError('Invalid YouTube video input.');

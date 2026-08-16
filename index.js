@@ -155,72 +155,98 @@ const ensureMinimumChunkCount = (chunks, minCount = 12, minChunkLength = 60) => 
 const processYoutube = async (videoUrl, namespace) => {
   logger.info({ videoUrl, namespace }, 'Processing YouTube video');
 
+  let chunks = [];
+  let usedMetadataFallback = false;
+
   try {
     logger.info('Fetching transcript...');
-    const transcriptArr = await YoutubeTranscript.fetchTranscript(videoUrl);
-    logger.info({ count: transcriptArr.length }, 'Transcript fetched');
+    let transcriptArr = null;
 
-    if (!Array.isArray(transcriptArr) || transcriptArr.length === 0) {
-      const msg = 'Could not fetch transcript. Make sure the video has captions (auto-generated or manual).';
-      logger.warn(msg);
-      throw new Error(msg);
+    try {
+      transcriptArr = await YoutubeTranscript.fetchTranscript(videoUrl);
+      logger.info({ count: transcriptArr?.length }, 'Transcript fetched');
+    } catch (transcriptErr) {
+      logger.warn({ err: transcriptErr.message }, 'Standard transcript fetch unavailable, attempting metadata fallback');
     }
 
-    logger.info('Cleaning transcript...');
-    const cleanedArr = cleanTranscript(transcriptArr);
+    if (Array.isArray(transcriptArr) && transcriptArr.length > 0) {
+      logger.info('Cleaning transcript...');
+      const cleanedArr = cleanTranscript(transcriptArr);
 
-    const fullText = cleanedArr.map((item) => item.text).join(' ').trim();
-    if (!fullText) {
-      throw new Error('Transcript text is empty after cleaning.');
+      const fullText = cleanedArr.map((item) => item.text).join(' ').trim();
+      if (fullText) {
+        logger.info({ length: fullText.length }, 'Cleaned text from transcript');
+        chunks = chunkTexts(fullText);
+
+        if (fullText.length > 1200 && chunks.length < 8) {
+          logger.info('Re-chunking with smaller windows for better coverage');
+          chunks = chunkTexts(fullText, 260, 60);
+        }
+      }
     }
-    logger.info({ length: fullText.length }, 'Cleaned text');
 
-    logger.info('Chunking text...');
-    let chunks = chunkTexts(fullText);
+    // If no transcript was available or transcript was empty, fall back to video metadata + AI topic extraction
+    if (!Array.isArray(chunks) || chunks.length === 0) {
+      logger.info('Extracting video metadata for topic-based knowledge...');
+      const metadata = await YoutubeTranscript.fetchVideoMetadata(videoUrl);
+      usedMetadataFallback = true;
 
-    // Adaptive re-chunking: if transcript is long but chunk count is still low,
-    // split into smaller chunks to improve retrieval coverage.
-    if (fullText.length > 1200 && chunks.length < 8) {
-      logger.info('Re-chunking with smaller windows for better coverage');
-      chunks = chunkTexts(fullText, 260, 60);
+      let contextText = `Video Title: ${metadata.title}\nCreator / Channel: ${metadata.author}\nDescription: ${metadata.description || 'Educational video'}`;
+
+      if (process.env.GROQ_API_KEY) {
+        try {
+          const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+            },
+            body: JSON.stringify({
+              model: 'llama-3.3-70b-versatile',
+              messages: [
+                {
+                  role: 'system',
+                  content:
+                    'You are an educational AI copilot. Given the title and description of a YouTube tutorial/lesson, produce an extensive, structured educational knowledge base. Cover key concepts, definitions, architecture, workflows, practical implementation details, tools, and best practices relevant to this topic.',
+                },
+                {
+                  role: 'user',
+                  content: contextText,
+                },
+              ],
+            }),
+          });
+
+          if (resp.ok) {
+            const data = await resp.json();
+            const generatedKnowledge = data.choices?.[0]?.message?.content;
+            if (generatedKnowledge) {
+              contextText += '\n\n' + generatedKnowledge;
+              logger.info('AI topic knowledge base created from metadata');
+            }
+          }
+        } catch (llmErr) {
+          logger.warn({ err: llmErr.message }, 'Failed to expand metadata with LLM');
+        }
+      }
+
+      chunks = chunkTexts(contextText);
     }
 
     chunks = ensureMinimumChunkCount(chunks, 12, 60);
 
-    // Final fallback: generate fixed sliding-window chunks directly from text
-    // so retrieval has enough candidates even on very short/sparse transcripts.
-    if (chunks.length < 12 && fullText.length > 0) {
-      const target = 12;
-      const windowSize = Math.max(90, Math.ceil(fullText.length / target));
-      const overlap = Math.floor(windowSize * 0.2);
-      const step = Math.max(1, windowSize - overlap);
-      const fallbackChunks = [];
-
-      for (let i = 0; i < fullText.length; i += step) {
-        const piece = fullText.slice(i, i + windowSize).trim();
-        if (piece) {
-          fallbackChunks.push(piece);
-        }
-        if (fallbackChunks.length >= target) {
-          break;
-        }
-      }
-
-      if (fallbackChunks.length > chunks.length) {
-        logger.info({ count: fallbackChunks.length }, 'Using fallback sliding chunks');
-        chunks = fallbackChunks;
-      }
-    }
-
     if (!Array.isArray(chunks) || chunks.length === 0) {
-      throw new Error('No chunks could be created from transcript.');
+      throw new Error('Could not create knowledge base for this video.');
     }
-    logger.info({ count: chunks.length }, 'Chunks created');
 
     logger.info('Storing embeddings...');
     await storeEmbeddings(chunks, namespace);
 
-    logger.info({ namespace, chunks: chunks.length }, 'Video processed successfully');
+    logger.info(
+      { namespace, chunks: chunks.length, usedMetadataFallback },
+      'Video processed successfully'
+    );
+    return { namespace, usedMetadataFallback };
   } catch (error) {
     logger.error({ err: error.message }, 'Failed to process YouTube video');
     throw new Error(`Video processing failed: ${error.message}`);
