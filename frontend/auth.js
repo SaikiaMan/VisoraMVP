@@ -1,7 +1,8 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-// Initialize Supabase client
-let supabaseClient = null;
+// Initialize Supabase client singleton
+let supabaseClient = (typeof window !== 'undefined' && window.__visoraSupabaseClient) || null;
+let supabaseInitPromise = null;
 
 async function fetchSupabaseConfig() {
   const configUrls = ['/api/config'];
@@ -40,20 +41,37 @@ async function initializeSupabase() {
     return supabaseClient;
   }
 
-  try {
-    const { supabaseUrl, supabaseAnonKey } = await fetchSupabaseConfig();
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error('Supabase credentials are not configured. Please check your .env file.');
-    }
-
-    console.log('✅ Supabase initialized with URL:', supabaseUrl);
-    supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+  if (typeof window !== 'undefined' && window.__visoraSupabaseClient) {
+    supabaseClient = window.__visoraSupabaseClient;
     return supabaseClient;
-  } catch (error) {
-    console.error('❌ Failed to initialize Supabase:', error.message);
-    throw error;
   }
+
+  if (supabaseInitPromise) {
+    return supabaseInitPromise;
+  }
+
+  supabaseInitPromise = (async () => {
+    try {
+      const { supabaseUrl, supabaseAnonKey } = await fetchSupabaseConfig();
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Supabase credentials are not configured. Please check your .env file.');
+      }
+
+      console.log('✅ Supabase initialized with URL:', supabaseUrl);
+      supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+      if (typeof window !== 'undefined') {
+        window.__visoraSupabaseClient = supabaseClient;
+      }
+      return supabaseClient;
+    } catch (error) {
+      console.error('❌ Failed to initialize Supabase:', error.message);
+      supabaseInitPromise = null;
+      throw error;
+    }
+  })();
+
+  return supabaseInitPromise;
 }
 
 function isAlreadyRegisteredError(error) {
@@ -220,6 +238,29 @@ export async function logoutUser() {
 }
 
 /**
+ * Reset / Update user password
+ */
+export async function resetPassword(email, newPassword) {
+  try {
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const resp = await fetch('/api/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: normalizedEmail, newPassword }),
+    });
+
+    const data = await resp.json();
+    if (!resp.ok || !data.ok) {
+      throw new Error(data.error || 'Failed to reset password.');
+    }
+
+    return { success: true, message: data.message };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Get current authenticated user
  */
 export async function getCurrentUser() {
@@ -253,3 +294,4 @@ export async function isUserAuthenticated() {
 export async function getSupabaseClient() {
   return await initializeSupabase();
 }
+

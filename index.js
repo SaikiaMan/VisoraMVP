@@ -348,6 +348,70 @@ app.post('/api/confirm-email', async (req, res) => {
   }
 });
 
+// Reset / Update user password
+app.post('/api/reset-password', async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  if (!email || !newPassword) {
+    return res.status(400).json({
+      ok: false,
+      error: 'Email and new password are required.',
+    });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({
+      ok: false,
+      error: 'Password must be at least 6 characters long.',
+    });
+  }
+
+  try {
+    if (!supabaseAdmin) {
+      return res.status(500).json({
+        ok: false,
+        error: 'Supabase admin is not configured.',
+      });
+    }
+
+    const { data: usersData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    if (listError) throw listError;
+
+    const user = usersData.users.find(
+      (u) => u.email?.toLowerCase() === email.trim().toLowerCase()
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        error: 'No account found with this email address. Please create a new account.',
+      });
+    }
+
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+      password: newPassword,
+      email_confirm: true,
+      user_metadata: {
+        email_confirmed_at: new Date().toISOString(),
+      },
+    });
+
+    if (updateError) throw updateError;
+
+    logger.info({ email }, 'User password updated successfully');
+    res.json({
+      ok: true,
+      message: 'Password updated successfully! You can now log in.',
+    });
+  } catch (error) {
+    logger.error({ err: error.message }, 'Password reset failed');
+    res.status(500).json({
+      ok: false,
+      error: error.message || 'Failed to update password.',
+    });
+  }
+});
+
 app.post('/api/init', async (req, res) => {
   const videoUrl = (req.body?.videoUrl || DEFAULT_VIDEO_URL).trim();
 
@@ -359,7 +423,7 @@ app.post('/api/init', async (req, res) => {
   } catch (error) {
     const errorMsg = error && error.message ? error.message : 'Failed to initialize video context.';
     logger.error({ err: errorMsg }, 'Initialization failed');
-    res.status(500).json({
+    res.status(400).json({
       ok: false,
       error: errorMsg,
     });
